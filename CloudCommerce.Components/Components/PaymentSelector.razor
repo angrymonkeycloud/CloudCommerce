@@ -1,0 +1,55 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<fieldset class="commerce-payment-selector">
+    <legend>
+        <span class="commerce-eyebrow">Secure payment</span>
+        <strong>@Title</strong>
+        <small>@Description</small>
+    </legend>
+    <div class="commerce-payment-selector-options">
+        @foreach (PaymentProviderOption provider in EffectiveOptions)
+        {
+            bool selected = SelectedProvider == provider.Name;
+            <label class="commerce-payment-selector-option @(selected ? "is-selected" : null) @(!provider.IsConfigured ? "is-demo" : null)">
+                <input type="radio"
+                       name="@GroupName"
+                       value="@provider.Name"
+                       checked="@selected"
+                       @onchange="() => OnSelected.InvokeAsync(provider.Name)" />
+                <span class="commerce-payment-selector-mark" aria-hidden="true">@Initials(provider.DisplayName)</span>
+                <span class="commerce-payment-selector-copy">
+                    <span>
+                        <strong>@provider.DisplayName</strong>
+                        @if (!string.IsNullOrWhiteSpace(provider.Badge))
+                        {
+                            <small class="commerce-chip">@provider.Badge</small>
+                        }
+                    </span>
+                    <small>@provider.Description</small>
+                    @if (!string.IsNullOrWhiteSpace(provider.Hint))
+                    {
+                        <em>@provider.Hint</em>
+                    }
+                </span>
+                <span class="commerce-radio" aria-hidden="true"></span>
+            </label>
+        }
+    </div>
+</fieldset>
+
+@code {
+    private readonly string GroupName = $"commerce-payment-{Guid.NewGuid():N}";
+
+    [Parameter] public string Title { get; set; } = "Choose how to pay";
+    [Parameter] public string Description { get; set; } = "Your application controls which providers are available.";
+    [Parameter] public IReadOnlyList<string> Providers { get; set; } = [];
+    [Parameter] public IReadOnlyList<PaymentProviderOption> Options { get; set; } = [];
+    [Parameter] public string? SelectedProvider { get; set; }
+    [Parameter] public EventCallback<string> OnSelected { get; set; }
+
+    private IEnumerable<PaymentProviderOption> EffectiveOptions => Options.Count > 0
+        ? Options
+        : Providers.Select(name => new PaymentProviderOption(name, name, "Secure provider checkout"));
+
+    private static string Initials(string value) => string.Concat(value.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+}

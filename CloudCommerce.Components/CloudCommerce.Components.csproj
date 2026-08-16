@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>AngryMonkey.CloudCommerce.Components</AssemblyName>
+    <RootNamespace>AngryMonkey.CloudCommerce.Components</RootNamespace>
+    <PackageId>AngryMonkey.CloudCommerce.Components</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Angry Monkey</Authors>
+    <Company>Angry Monkey</Company>
+    <Product>Cloud Commerce Components</Product>
+    <Description>Replaceable Blazor commerce components, pages, and default storefront composition.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.10" />
+    <ProjectReference Include="..\CloudCommerce\CloudCommerce.csproj" />
+
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

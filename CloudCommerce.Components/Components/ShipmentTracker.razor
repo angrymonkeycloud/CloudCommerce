@@ -1,0 +1,43 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<section class="commerce-shipment-tracker">
+    <header class="commerce-shipment-tracker-header">
+        <div>
+            <span class="commerce-eyebrow">Live delivery</span>
+            <h2>@Title</h2>
+            <p>@Shipment.Provider · @Shipment.ServiceCode</p>
+        </div>
+        <span class="commerce-status commerce-status--@Shipment.Status.ToString().ToLowerInvariant()">@StatusLabel</span>
+    </header>
+
+    <div class="commerce-shipment-tracker-reference">
+        <span>Tracking number</span>
+        <strong>@(Shipment.TrackingNumber ?? "Pending assignment")</strong>
+        @if (Shipment.TrackingUrl is not null)
+        {
+            <a href="@Shipment.TrackingUrl" target="_blank" rel="noreferrer">Open carrier tracking <span aria-hidden="true">↗</span></a>
+        }
+    </div>
+
+    <ol class="commerce-shipment-timeline">
+        @foreach (ShipmentTrackingEvent item in Events)
+        {
+            <li class="@(item.IsComplete ? "is-complete" : null) @(item.IsCurrent ? "is-current" : null)">
+                <span class="commerce-shipment-timeline-marker" aria-hidden="true"></span>
+                <div>
+                    <strong>@item.Label</strong>
+                    <p>@item.Description</p>
+                </div>
+                <time>@(item.OccurredAt?.ToString("dd MMM · HH:mm") ?? "Next")</time>
+            </li>
+        }
+    </ol>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public required Shipment Shipment { get; set; }
+    [Parameter] public string Title { get; set; } = "Your order is moving";
+    [Parameter] public IReadOnlyList<ShipmentTrackingEvent> Events { get; set; } = [];
+
+    private string StatusLabel => string.Concat(Shipment.Status.ToString().Select((character, index) => index > 0 && char.IsUpper(character) ? $" {character}" : character.ToString()));
+}

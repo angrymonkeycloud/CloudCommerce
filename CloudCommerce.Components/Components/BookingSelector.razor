@@ -1,0 +1,66 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<section class="commerce-booking-selector">
+    <header class="commerce-section-heading">
+        <div>
+            <span class="commerce-eyebrow">@Eyebrow</span>
+            <h2>@Title</h2>
+            @if (!string.IsNullOrWhiteSpace(Description))
+            {
+                <p>@Description</p>
+            }
+        </div>
+        <span class="commerce-booking-selector-timezone">@TimeZoneLabel</span>
+    </header>
+
+    @if (Slots.Count == 0)
+    {
+        <div class="commerce-empty-state">
+            <span aria-hidden="true">◷</span>
+            <strong>No available times</strong>
+            <p>Try a different date range or resource.</p>
+        </div>
+    }
+    else
+    {
+        <div class="commerce-booking-days">
+            @foreach (IGrouping<DateOnly, TimeSlot> day in GroupedSlots)
+            {
+                <section class="commerce-booking-day">
+                    <header>
+                        <span>@day.Key.ToString("ddd")</span>
+                        <strong>@day.Key.ToString("dd")</strong>
+                        <small>@day.Key.ToString("MMM")</small>
+                    </header>
+                    <div class="commerce-booking-times">
+                        @foreach (TimeSlot slot in day)
+                        {
+                            bool selected = Selected?.ResourceId == slot.ResourceId && Selected.StartsAt == slot.StartsAt;
+                            <button type="button"
+                                    class="@(selected ? "is-selected" : null)"
+                                    aria-pressed="@selected"
+                                    @onclick="() => OnSelected.InvokeAsync(slot)">
+                                <span>@slot.StartsAt.ToString("HH:mm")</span>
+                                <small>@slot.RemainingCapacity @(slot.RemainingCapacity == 1 ? "place" : "places")</small>
+                            </button>
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter] public string Eyebrow { get; set; } = "Availability";
+    [Parameter] public string Title { get; set; } = "Choose a time";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string TimeZoneLabel { get; set; } = "UTC";
+    [Parameter] public IReadOnlyList<TimeSlot> Slots { get; set; } = [];
+    [Parameter] public TimeSlot? Selected { get; set; }
+    [Parameter] public EventCallback<TimeSlot> OnSelected { get; set; }
+
+    private IEnumerable<IGrouping<DateOnly, TimeSlot>> GroupedSlots => Slots
+        .OrderBy(slot => slot.StartsAt)
+        .GroupBy(slot => DateOnly.FromDateTime(slot.StartsAt.Date));
+}

@@ -1,0 +1,11 @@
+@namespace AngryMonkey.CloudCommerce.Components.Pages
+
+<main class="commerce-product-page">
+    <CommerceComponentHost Slot="CommerceComponentSlots.ProductInformation" Parameters="Parameters" />
+</main>
+
+@code {
+    [Parameter, EditorRequired] public required ProductPresentation Product { get; set; }
+    [Parameter] public EventCallback<ProductPresentation> OnAdd { get; set; }
+    private Dictionary<string, object> Parameters => new() { [nameof(Components.ProductInformation.Product)] = Product, [nameof(Components.ProductInformation.OnAdd)] = OnAdd };
+}

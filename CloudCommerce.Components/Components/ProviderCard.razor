@@ -1,0 +1,50 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<article class="commerce-provider-card commerce-provider-card--@Model.Accent @(Selected ? "is-selected" : null)">
+    <div class="commerce-provider-card-header">
+        <div class="commerce-provider-card-mark" aria-hidden="true">@Initials</div>
+        <div>
+            <span class="commerce-provider-card-category">@Model.Category</span>
+            <h3>@Model.Name</h3>
+        </div>
+        <span class="commerce-provider-card-state @(Model.IsConfigured ? "is-live" : null)">
+            <span aria-hidden="true"></span>
+            @(Model.IsConfigured ? "Configured" : "Demo mode")
+        </span>
+    </div>
+    <p>@Model.Description</p>
+    <div class="commerce-provider-card-region">@Model.Region</div>
+    <ul class="commerce-provider-card-capabilities" aria-label="@Model.Name capabilities">
+        @foreach (string capability in Model.Capabilities)
+        {
+            <li>@capability</li>
+        }
+    </ul>
+    <div class="commerce-provider-card-actions">
+        @if (OnSelected.HasDelegate)
+        {
+            <button class="commerce-button commerce-button--primary" type="button" @onclick="() => OnSelected.InvokeAsync(Model)">
+                @(Selected ? "Selected" : "Try the flow")
+            </button>
+        }
+        <a href="@Model.DocumentationUrl" target="_blank" rel="noreferrer">Docs <span aria-hidden="true">↗</span></a>
+        @if (Model.TestingUrl is not null)
+        {
+            <a href="@Model.TestingUrl" target="_blank" rel="noreferrer">Test resources <span aria-hidden="true">↗</span></a>
+        }
+        @if (Model.PortalUrl is not null)
+        {
+            <a href="@Model.PortalUrl" target="_blank" rel="noreferrer">Open portal <span aria-hidden="true">↗</span></a>
+        }
+    </div>
+    @ChildContent
+</article>
+
+@code {
+    [Parameter, EditorRequired] public required ProviderCardModel Model { get; set; }
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public EventCallback<ProviderCardModel> OnSelected { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string Initials => string.Concat(Model.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+}

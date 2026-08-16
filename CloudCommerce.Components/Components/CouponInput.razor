@@ -1,0 +1,21 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<div class="commerce-coupon-input">
+    <div>
+        <label for="@InputId">Promotion code</label>
+        <span>Offers are calculated by CloudCommerce.</span>
+    </div>
+    <div class="commerce-input-group">
+        <input id="@InputId" @bind="Code" placeholder="MONKEY20" autocomplete="off" />
+        <button class="commerce-button commerce-button--secondary" type="button" @onclick="ApplyAsync" disabled="@string.IsNullOrWhiteSpace(Code)">Apply</button>
+    </div>
+</div>
+
+@code {
+    private readonly string InputId = $"commerce-coupon-{Guid.NewGuid():N}";
+    private string Code { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback<string> OnApply { get; set; }
+
+    private Task ApplyAsync() => string.IsNullOrWhiteSpace(Code) ? Task.CompletedTask : OnApply.InvokeAsync(Code.Trim());
+}

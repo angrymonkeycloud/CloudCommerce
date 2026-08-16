@@ -1,0 +1,45 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<section class="commerce-cart">
+    <header class="commerce-section-heading commerce-cart-header">
+        <div>
+            <span class="commerce-eyebrow">Your selection</span>
+            <h1>@Title</h1>
+            <p>@ItemLabel</p>
+        </div>
+        @if (Cart.Items.Count > 0)
+        {
+            <span class="commerce-cart-count">@Cart.Items.Sum(item => item.Quantity)</span>
+        }
+    </header>
+    @if (Cart.Items.Count == 0)
+    {
+        <div class="commerce-empty-state">
+            <span aria-hidden="true">◌</span>
+            <strong>Your cart is ready for something great</strong>
+            <p>Add a product or service to start the checkout journey.</p>
+        </div>
+    }
+    else
+    {
+        <ul class="commerce-cart-items">
+            @foreach (CartItem item in Cart.Items)
+            {
+                <CommerceComponentHost Slot="CommerceComponentSlots.CartItem" Parameters="ItemParameters(item)" />
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public required Cart Cart { get; set; }
+    [Parameter] public string Title { get; set; } = "Shopping cart";
+    [Parameter] public EventCallback<Guid> OnRemove { get; set; }
+
+    private string ItemLabel => Cart.Items.Count == 1 ? "1 item reserved for checkout" : $"{Cart.Items.Count} items reserved for checkout";
+    private Dictionary<string, object> ItemParameters(CartItem item) => new()
+    {
+        [nameof(CartItemView.Item)] = item,
+        [nameof(CartItemView.OnRemove)] = OnRemove
+    };
+}

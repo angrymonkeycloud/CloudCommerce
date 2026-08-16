@@ -1,0 +1,50 @@
+@page "/"
+@rendermode InteractiveServer
+@inject IPaymentProviderRegistry PaymentProviders
+@inject IShippingProviderRegistry ShippingProviders
+
+<PageTitle>CloudCommerce ecosystem</PageTitle>
+
+<section class="demo-hero">
+    <div class="demo-hero-copy">
+        <span class="demo-kicker"><i></i> Four independent domains. One composed journey.</span>
+        <h1>Commerce infrastructure,<br /><em>designed to come apart.</em></h1>
+        <p>Payments, logistics, booking, and commerce orchestration that work independently—then compose into a storefront without taking ownership of your product model.</p>
+        <div class="demo-hero-actions">
+            <a class="demo-button demo-button--primary" href="storefront">Experience the storefront <span>→</span></a>
+            <a class="demo-button demo-button--ghost" href="architecture">Explore the architecture</a>
+        </div>
+        <div class="demo-hero-trust"><span><b>✓</b> Headless-first</span><span><b>✓</b> Provider-neutral</span><span><b>✓</b> Replaceable UI</span></div>
+    </div>
+    <div class="demo-hero-visual" aria-label="CloudCommerce domain composition">
+        <div class="demo-orbit demo-orbit--one"></div><div class="demo-orbit demo-orbit--two"></div>
+        <div class="demo-domain-core"><span>CC</span><strong>CloudCommerce</strong><small>Orchestration</small></div>
+        <a class="demo-domain-node demo-domain-node--payments" href="payments"><span>▣</span><strong>Payments</strong><small>@PaymentCount adapters</small></a>
+        <a class="demo-domain-node demo-domain-node--logistics" href="logistics"><span>⇢</span><strong>Logistics</strong><small>@ShippingCount carriers</small></a>
+        <a class="demo-domain-node demo-domain-node--booking" href="booking"><span>◷</span><strong>Booking</strong><small>Standalone</small></a>
+    </div>
+</section>
+
+<section class="demo-metrics" aria-label="Ecosystem highlights">
+    <article><span>01</span><div><strong>Independent foundations</strong><small>No circular dependencies</small></div></article>
+    <article><span>07</span><div><strong>Payment adapters</strong><small>Global and MENA coverage</small></div></article>
+    <article><span>03</span><div><strong>Carrier adapters</strong><small>Rates, labels, and tracking</small></div></article>
+    <article><span>∞</span><div><strong>Application models</strong><small>Your products stay yours</small></div></article>
+</section>
+
+<section class="demo-section">
+    <DemoPageHeader Eyebrow="Explore the system" Title="Start with a complete journey—or one small piece." Description="Every page is interactive, backed by the public abstractions, and designed to teach the extension points without requiring live credentials." />
+    <div class="demo-feature-grid">
+        <a class="demo-feature-card demo-feature-card--store" href="storefront"><span class="demo-feature-icon">◇</span><div><small>Full composition</small><h2>Storefront journey</h2><p>Browse, book, ship, select a regional payment provider, and complete a safe end-to-end checkout.</p></div><b>Open journey →</b></a>
+        <a class="demo-feature-card" href="payments"><span class="demo-feature-icon">▣</span><div><small>Financial orchestration</small><h2>Payment lab</h2><p>Compare provider capabilities and walk through normalized create, action, authorize, capture, and refund states.</p></div><b>Explore payments →</b></a>
+        <a class="demo-feature-card" href="logistics"><span class="demo-feature-icon">⇢</span><div><small>Physical movement</small><h2>Logistics control room</h2><p>Compare carriers, choose delivery services, and progress a shipment through a live tracking timeline.</p></div><b>Explore logistics →</b></a>
+        <a class="demo-feature-card" href="booking"><span class="demo-feature-icon">◷</span><div><small>Time and capacity</small><h2>Booking studio</h2><p>Generate real availability, reserve capacity, confirm, reschedule, and cancel without any persistence dependency.</p></div><b>Explore booking →</b></a>
+    </div>
+</section>
+
+<DemoCallout Tone="success" Icon="✓" Title="Safe by default">The demo never sends a transaction to a provider. Configure sandbox credentials locally when you are ready; all learning links point to official provider resources.</DemoCallout>
+
+@code {
+    private int PaymentCount => Math.Max(7, PaymentProviders.Providers.Count);
+    private int ShippingCount => Math.Max(3, ShippingProviders.Providers.Count(provider => provider.Name != "Demo Shipping"));
+}

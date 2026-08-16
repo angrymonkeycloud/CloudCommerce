@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>AngryMonkey.CloudCommerce</AssemblyName>
+    <RootNamespace>AngryMonkey.CloudCommerce</RootNamespace>
+    <PackageId>AngryMonkey.CloudCommerce</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Angry Monkey</Authors>
+    <Company>Angry Monkey</Company>
+    <Product>Cloud Commerce</Product>
+    <Description>Optional commerce orchestration over CloudLogin, CloudPayments, CloudLogistics, and CloudBooking.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AngryMonkey.CloudGeography" Version="2.8.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <ProjectReference Include="..\CloudBooking\CloudBooking.csproj" />
+    <ProjectReference Include="..\CloudLogistics\CloudLogistics.csproj" />
+    <ProjectReference Include="..\CloudPayments\CloudPayments.csproj" />
+    <ProjectReference Include="..\CloudLogin.Contracts\CloudLogin.Contracts.csproj" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

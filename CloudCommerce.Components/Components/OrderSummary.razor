@@ -1,0 +1,35 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<section class="commerce-order-summary">
+    <header>
+        <div>
+            <span class="commerce-eyebrow">Final review</span>
+            <h2>Order summary</h2>
+        </div>
+        <span class="commerce-order-summary-currency">@Totals.Final.Currency</span>
+    </header>
+    <dl>
+        <div><dt>Items</dt><dd>@Money(Totals.Items)</dd></div>
+        @foreach (DiscountAdjustment adjustment in Totals.Adjustments)
+        {
+            <div class="is-discount"><dt>@adjustment.Description</dt><dd>-@Money(adjustment.Amount)</dd></div>
+        }
+        @if (Totals.Adjustments.Count == 0 && Totals.Discount.Value > 0)
+        {
+            <div class="is-discount"><dt>Discount</dt><dd>-@Money(Totals.Discount)</dd></div>
+        }
+        <div><dt>Shipping</dt><dd>@(Totals.Shipping.Value == 0 ? "Included" : Money(Totals.Shipping))</dd></div>
+        <div><dt>Tax</dt><dd>@Money(Totals.Tax)</dd></div>
+        <div class="commerce-order-summary-total"><dt>Total</dt><dd>@Money(Totals.Final)</dd></div>
+    </dl>
+    <div class="commerce-order-summary-assurance">
+        <span aria-hidden="true">◆</span>
+        <div><strong>Safe orchestration</strong><small>Payment details stay with the selected provider.</small></div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public required CommerceTotals Totals { get; set; }
+
+    private static string Money(AngryMonkey.Cloud.Geography.Money money) => $"{money.Value:0.00} {money.Currency}";
+}

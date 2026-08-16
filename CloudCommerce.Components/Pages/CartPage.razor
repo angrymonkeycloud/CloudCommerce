@@ -1,0 +1,9 @@
+@namespace AngryMonkey.CloudCommerce.Components.Pages
+
+<main class="commerce-cart-page"><CommerceComponentHost Slot="CommerceComponentSlots.Cart" Parameters="Parameters" /></main>
+
+@code {
+    [Parameter, EditorRequired] public required Cart Cart { get; set; }
+    [Parameter] public EventCallback<Guid> OnRemove { get; set; }
+    private Dictionary<string, object> Parameters => new() { [nameof(Components.CartView.Cart)] = Cart, [nameof(Components.CartView.OnRemove)] = OnRemove };
+}

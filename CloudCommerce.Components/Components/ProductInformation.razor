@@ -1,0 +1,42 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<article class="commerce-product-information">
+    <div class="commerce-product-information-media">
+        @if (Product.Image is not null)
+        {
+            <img class="commerce-product-information-image" src="@Product.Image" alt="@Product.Title" />
+        }
+        else
+        {
+            <div class="commerce-product-information-placeholder" aria-hidden="true">@Initials</div>
+        }
+    </div>
+    <div class="commerce-product-information-content">
+        <span class="commerce-eyebrow">@Category</span>
+        <h1>@Product.Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Product.Description))
+        {
+            <p class="commerce-product-information-description">@Product.Description</p>
+        }
+        <div class="commerce-product-information-benefits">
+            <span>✓ Secure checkout</span>
+            <span>✓ Provider-agnostic</span>
+            <span>✓ Application-owned product</span>
+        </div>
+        <div class="commerce-product-information-purchase">
+            <div class="commerce-price commerce-price--large">
+                <strong>@Product.Price.Value.ToString("0.00")</strong>
+                <span>@Product.Price.Currency</span>
+            </div>
+            <button class="commerce-button commerce-button--primary" type="button" @onclick="() => OnAdd.InvokeAsync(Product)">Add to cart</button>
+        </div>
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public required ProductPresentation Product { get; set; }
+    [Parameter] public EventCallback<ProductPresentation> OnAdd { get; set; }
+
+    private string Category => Product.Metadata?.GetValueOrDefault("category") ?? "Featured";
+    private string Initials => string.Concat(Product.Title.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+}

@@ -1,0 +1,109 @@
+@page "/payments"
+@rendermode InteractiveServer
+@inject IPaymentProviderRegistry Registry
+@inject PaymentFlowSimulator Simulator
+
+<PageTitle>CloudPayments provider lab</PageTitle>
+
+<DemoPageHeader Eyebrow="CloudPayments" Title="One payment language. Seven provider dialects." Description="Compare capabilities, open official sandbox resources, and run a normalized payment lifecycle without sending a real provider request.">
+    <span class="demo-mode-badge"><i></i> Safe simulation</span>
+</DemoPageHeader>
+
+<DemoCallout Title="Credentials are optional here" Icon="⌁">Every card below is interactive in simulated mode. A green configured badge only appears when that adapter was registered with local sandbox credentials.</DemoCallout>
+
+<section class="demo-provider-grid">
+    @foreach (ProviderCardModel provider in Providers)
+    {
+        <ProviderCard Model="provider" Selected="@(Simulator.Provider.Name == provider.Name)" OnSelected="SelectProvider" />
+    }
+</section>
+
+<section class="demo-lab">
+    <header class="demo-lab-header">
+        <div><span class="demo-eyebrow">Interactive normalized flow</span><h2>@Simulator.Provider.Name payment journey</h2><p>Provider-specific redirects and responses become consistent CloudPayments states.</p></div>
+        <button class="demo-button demo-button--ghost" type="button" @onclick="Reset">Reset flow</button>
+    </header>
+    <div class="demo-lab-grid">
+        <div class="demo-simulator">
+            <div class="demo-form-row">
+                <label><span>Amount</span><input type="number" min="0.01" step="0.01" @bind="_amount" /></label>
+                <label><span>Currency</span><select @bind="_currency"><option>USD</option><option>QAR</option><option>KWD</option><option>AED</option><option>SAR</option></select></label>
+            </div>
+            <ol class="demo-flow-steps">
+                @foreach ((string Label, DemoPaymentStages Stage) step in FlowSteps)
+                {
+                    <li data-state="@StepState(step.Stage)"><span>@(Array.IndexOf(FlowSteps, step) + 1)</span><div><strong>@step.Label</strong><small>@StepDescription(step.Stage)</small></div></li>
+                }
+            </ol>
+            <button class="demo-button demo-button--primary demo-button--wide" type="button" @onclick="Advance">@Simulator.ActionLabel <span>→</span></button>
+            <small class="demo-simulator-note">No network call is made. The real adapter is exercised by its isolated HTTP contract tests.</small>
+        </div>
+        <div class="demo-response-panel">
+            <header><span><i></i> Normalized response</span><small>application/json</small></header>
+            <pre><code>@Simulator.Json</code></pre>
+            <footer><span>Status</span><strong>@Simulator.Stage</strong></footer>
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <DemoPageHeader Eyebrow="Capability map" Title="A stable core, honest provider differences." Description="Unsupported capabilities are normalized rather than silently emulated; your application can inspect each adapter before choosing a flow." />
+    <div class="demo-table-wrap">
+        <table class="demo-capability-table">
+            <thead><tr><th>Provider</th><th>Create</th><th>Authorize</th><th>Capture</th><th>Refund</th><th>Webhooks</th><th>Focus</th></tr></thead>
+            <tbody>
+                @foreach (ProviderCardModel provider in Providers)
+                {
+                    <tr><th>@provider.Name</th><td>✓</td><td>@Has(provider, "Authorize")</td><td>@Has(provider, "Capture")</td><td>@Has(provider, "Refund")</td><td>@Has(provider, "Webhook")</td><td><span>@provider.Region</span></td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@code {
+    private static readonly (string Label, DemoPaymentStages Stage)[] FlowSteps =
+    [
+        ("Created", DemoPaymentStages.Created),
+        ("Customer action", DemoPaymentStages.RequiresAction),
+        ("Authorized", DemoPaymentStages.Authorized),
+        ("Captured", DemoPaymentStages.Captured),
+        ("Refunded", DemoPaymentStages.Refunded)
+    ];
+
+    private decimal _amount = 114m;
+    private string _currency = "USD";
+    private IReadOnlyList<ProviderCardModel> Providers = [];
+
+    protected override void OnInitialized()
+    {
+        HashSet<string> installed = Registry.Providers.Select(provider => provider.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        Providers = DemoCatalog.PaymentProviders.Select(provider => provider with { IsConfigured = installed.Contains(provider.Name) }).ToArray();
+        ProviderCardModel initial = Providers.First(provider => provider.Name == Simulator.Provider.Name);
+        Simulator.Select(initial);
+    }
+
+    private void SelectProvider(ProviderCardModel provider) => Simulator.Select(provider);
+
+    private void Advance()
+    {
+        Simulator.Configure(_amount, _currency);
+        Simulator.Advance();
+    }
+
+    private void Reset() => Simulator.Reset();
+
+    private string StepState(DemoPaymentStages stage) => Simulator.Stage == stage ? "current" : Simulator.Stage > stage ? "complete" : "upcoming";
+
+    private static string StepDescription(DemoPaymentStages stage) => stage switch
+    {
+        DemoPaymentStages.Created => "Idempotent provider request",
+        DemoPaymentStages.RequiresAction => "Redirect or 3DS challenge",
+        DemoPaymentStages.Authorized => "Funds reserved",
+        DemoPaymentStages.Captured => "Funds captured",
+        DemoPaymentStages.Refunded => "Normalized refund result",
+        _ => string.Empty
+    };
+
+    private static string Has(ProviderCardModel provider, string value) => provider.Capabilities.Any(capability => capability.Contains(value, StringComparison.OrdinalIgnoreCase)) ? "✓" : "—";
+}

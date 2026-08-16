@@ -1,0 +1,15 @@
+@namespace AngryMonkey.CloudCommerce.Components.Pages
+
+<main class="commerce-order-confirmation-page">
+    <h1>Order confirmed</h1>
+    @if (Order is not null)
+    {
+        <p>Order @Order.Id has status @Order.Status.</p>
+        <CommerceComponentHost Slot="CommerceComponentSlots.OrderSummary" Parameters="Parameters" />
+    }
+</main>
+
+@code {
+    [Parameter] public Order? Order { get; set; }
+    private Dictionary<string, object> Parameters => new() { [nameof(Components.OrderSummary.Totals)] = Order!.Totals };
+}

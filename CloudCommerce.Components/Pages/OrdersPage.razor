@@ -1,0 +1,8 @@
+@namespace AngryMonkey.CloudCommerce.Components.Pages
+
+<main class="commerce-orders-page">
+    <h1>Orders</h1>
+    <ul>@foreach (Order order in Orders) { <li>@order.Id — @order.Status — @order.Totals.Final.Value.ToString("0.00") @order.Totals.Final.Currency</li> }</ul>
+</main>
+
+@code { [Parameter] public IReadOnlyList<Order> Orders { get; set; } = []; }

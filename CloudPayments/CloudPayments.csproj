@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>AngryMonkey.CloudPayments</AssemblyName>
+    <RootNamespace>AngryMonkey.CloudPayments</RootNamespace>
+    <PackageId>AngryMonkey.CloudPayments</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Angry Monkey</Authors>
+    <Company>Angry Monkey</Company>
+    <Product>Cloud Payments</Product>
+    <Description>Provider-neutral payment orchestration for .NET applications.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AngryMonkey.CloudGeography" Version="2.8.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

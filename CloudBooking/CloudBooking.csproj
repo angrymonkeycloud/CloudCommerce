@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>AngryMonkey.CloudBooking</AssemblyName>
+    <RootNamespace>AngryMonkey.CloudBooking</RootNamespace>
+    <PackageId>AngryMonkey.CloudBooking</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Angry Monkey</Authors>
+    <Company>Angry Monkey</Company>
+    <Product>Cloud Booking</Product>
+    <Description>Standalone scheduling, availability, capacity, and reservation abstractions for .NET applications.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

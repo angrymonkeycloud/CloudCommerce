@@ -1,0 +1,48 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<article class="commerce-product-card">
+    <div class="commerce-product-card-media">
+        @if (Product.Image is not null)
+        {
+            <img class="commerce-product-card-image" src="@Product.Image" alt="@Product.Title" loading="lazy" />
+        }
+        else
+        {
+            <div class="commerce-product-card-placeholder" aria-hidden="true"><span>@Initials</span></div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Badge))
+        {
+            <span class="commerce-product-card-badge">@Badge</span>
+        }
+        <button class="commerce-product-card-favorite" type="button" aria-label="Save @Product.Title" title="Save item">♡</button>
+    </div>
+    <div class="commerce-product-card-body">
+        @if (!string.IsNullOrWhiteSpace(Category))
+        {
+            <span class="commerce-product-card-category">@Category</span>
+        }
+        <h2>@Product.Title</h2>
+        @if (!string.IsNullOrWhiteSpace(Product.Description))
+        {
+            <p class="commerce-product-card-description">@Product.Description</p>
+        }
+        <div class="commerce-product-card-footer">
+            <div class="commerce-price">
+                <strong>@Product.Price.Value.ToString("0.00")</strong>
+                <span>@Product.Price.Currency</span>
+            </div>
+            <button class="commerce-button commerce-button--primary commerce-button--icon" type="button" @onclick="() => OnAdd.InvokeAsync(Product)" aria-label="Add @Product.Title to cart">
+                <span aria-hidden="true">＋</span>
+            </button>
+        </div>
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public required ProductPresentation Product { get; set; }
+    [Parameter] public EventCallback<ProductPresentation> OnAdd { get; set; }
+
+    private string? Badge => Product.Metadata?.GetValueOrDefault("badge");
+    private string? Category => Product.Metadata?.GetValueOrDefault("category");
+    private string Initials => string.Concat(Product.Title.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+}

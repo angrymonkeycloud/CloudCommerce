@@ -1,0 +1,40 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<section class="commerce-checkout">
+    <header class="commerce-checkout-header">
+        <div>
+            <span class="commerce-eyebrow">Almost there</span>
+            <h1>@Title</h1>
+            <p>@Description</p>
+        </div>
+        <span class="commerce-checkout-lock" aria-label="Secure checkout">◇ Secure</span>
+    </header>
+
+    @if (Steps.Count > 0)
+    {
+        <CommerceComponentHost Slot="CommerceComponentSlots.CheckoutProgress" Parameters="ProgressParameters" />
+    }
+
+    <div class="commerce-checkout-layout">
+        <div class="commerce-checkout-main">
+            <CommerceComponentHost Slot="CommerceComponentSlots.Cart" Parameters="CartParameters" />
+            @ChildContent
+        </div>
+        <aside class="commerce-checkout-aside">
+            <CommerceComponentHost Slot="CommerceComponentSlots.OrderSummary" Parameters="TotalsParameters" />
+        </aside>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public required Cart Cart { get; set; }
+    [Parameter, EditorRequired] public required CommerceTotals Totals { get; set; }
+    [Parameter] public string Title { get; set; } = "Complete your order";
+    [Parameter] public string Description { get; set; } = "Review fulfillment, booking, and payment in one composed journey.";
+    [Parameter] public IReadOnlyList<CheckoutStepModel> Steps { get; set; } = [];
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private Dictionary<string, object> CartParameters => new() { [nameof(Components.CartView.Cart)] = Cart };
+    private Dictionary<string, object> TotalsParameters => new() { [nameof(Components.OrderSummary.Totals)] = Totals };
+    private Dictionary<string, object> ProgressParameters => new() { [nameof(Components.CheckoutProgress.Steps)] = Steps };
+}

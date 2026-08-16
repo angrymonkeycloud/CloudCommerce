@@ -1,0 +1,13 @@
+@namespace AngryMonkey.CloudCommerce.Components.Pages
+
+<div class="commerce-storefront">
+    <header class="commerce-storefront-header">@Header</header>
+    <main class="commerce-storefront-content">@ChildContent</main>
+    <footer class="commerce-storefront-footer">@Footer</footer>
+</div>
+
+@code {
+    [Parameter] public RenderFragment? Header { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+}

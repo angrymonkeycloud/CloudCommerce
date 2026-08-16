@@ -1,0 +1,49 @@
+@page "/components"
+@rendermode InteractiveServer
+
+<PageTitle>CloudCommerce component gallery</PageTitle>
+
+<DemoPageHeader Eyebrow="CloudCommerce.Components" Title="Strong defaults. Near-total visual control." Description="The component package supplies accessible, responsive defaults while every major slot can be replaced through configuration without rewriting the domain workflow.">
+    <span class="demo-mode-badge"><i></i> 13 replaceable slots</span>
+</DemoPageHeader>
+
+<div class="demo-component-tabs"><button class="active" type="button">Live gallery</button><a href="#override">Override system</a><a href="#tokens">Design tokens</a></div>
+
+<section class="demo-component-showcase">
+    <header class="demo-showcase-heading"><div><span>01</span><div><small>Catalog</small><h2>Product presentation</h2></div></div><p>Application models cross the boundary as lightweight, non-authoritative display contracts.</p></header>
+    <div class="demo-component-stage demo-component-stage--catalog"><ProductCard Product="DemoCatalog.Products[0]" OnAdd="AddedFromLab" /><ProductInformation Product="DemoCatalog.Products[1]" OnAdd="AddedFromLab" /></div>
+</section>
+
+<section class="demo-component-showcase">
+    <header class="demo-showcase-heading"><div><span>02</span><div><small>Checkout</small><h2>Payment and delivery selection</h2></div></div><p>Providers remain data. The selector owns presentation and emits a stable application choice.</p></header>
+    <div class="demo-component-stage demo-component-stage--split"><PaymentSelector Options="DemoCatalog.CheckoutPaymentOptions.Take(3).ToArray()" SelectedProvider="_payment" OnSelected="value => _payment = value" /><ShippingSelector Options="ShippingOptions" Selected="_shipping" OnSelected="value => _shipping = value" /></div>
+</section>
+
+<section class="demo-component-showcase">
+    <header class="demo-showcase-heading"><div><span>03</span><div><small>Time + movement</small><h2>Booking and shipment tracking</h2></div></div><p>Rich domain state can be presented independently from any commerce page.</p></header>
+    <div class="demo-component-stage demo-component-stage--split"><BookingSelector Slots="Slots" Selected="_slot" OnSelected="value => _slot = value" TimeZoneLabel="UTC" /><ShipmentTracker Shipment="Shipment" Events="Events" /></div>
+</section>
+
+<section class="demo-override" id="override">
+    <div><span class="demo-eyebrow">Component override system</span><h2>Replace markup, preserve workflow.</h2><p>Register your Razor type for a semantic slot. CloudCommerce keeps supplying the same parameters and business state.</p><ul><li>Product cards and information</li><li>Cart, item, coupon, and summary</li><li>Payment and shipping selection</li><li>Booking, progress, and shipment tracking</li></ul></div>
+    <div class="demo-code-window"><header><span><i></i><i></i><i></i></span><small>Program.cs</small></header><pre><code>@OverrideCode</code></pre></div>
+</section>
+
+<section class="demo-token-section" id="tokens"><DemoPageHeader Eyebrow="Theme contract" Title="A focused token surface, not a competing framework." Description="Override CSS custom properties at your application boundary, author changes in LESS, or replace individual Razor slots." /><div class="demo-token-grid"><article><span style="--swatch:#6d4aff"></span><code>--commerce-primary</code><small>Brand actions</small></article><article><span style="--swatch:#fff"></span><code>--commerce-surface</code><small>Cards and panels</small></article><article><span style="--swatch:#172033"></span><code>--commerce-ink</code><small>Readable hierarchy</small></article><article><span style="--swatch:#00a884"></span><code>--commerce-success</code><small>Positive state</small></article></div></section>
+
+<p class="demo-toast" data-visible="@(!string.IsNullOrWhiteSpace(_message))" role="status">@_message</p>
+
+@code {
+    private string _payment = "MyFatoorah";
+    private ShippingSelection _shipping = ShippingOptions[0];
+    private TimeSlot? _slot = Slots[0];
+    private string? _message;
+
+    private static IReadOnlyList<ShippingSelection> ShippingOptions => [new("Aramex", "priority", new("USD", 14.80m), DemoCatalog.WarehouseId), new("DHL Express", "express", new("USD", 22.40m), DemoCatalog.WarehouseId)];
+    private static IReadOnlyList<TimeSlot> Slots => Enumerable.Range(0, 9).Select(index => { DateTimeOffset start = DateTimeOffset.UtcNow.Date.AddDays(1 + index / 3).AddHours(9 + index % 3 * 2); return new TimeSlot(DemoCatalog.ResourceId, start, start.AddHours(1), 2 - index % 2); }).ToArray();
+    private static Shipment Shipment => new(Guid.NewGuid(), "Aramex", "priority", ShipmentStatuses.InTransit, "AMC-DOH-240816");
+    private static IReadOnlyList<ShipmentTrackingEvent> Events => [new("Shipment prepared", "Inventory reserved and label generated.", DateTimeOffset.Now.AddHours(-5), true), new("In carrier network", "Accepted at the Beirut origin facility.", DateTimeOffset.Now.AddHours(-2), true, true), new("Out for delivery", "Courier receives the final-mile handoff."), new("Delivered", "Recipient confirmation closes fulfillment.")];
+    private void AddedFromLab(ProductPresentation product) => _message = $"{product.Title} added from the component lab.";
+    private static string OverrideCode => string.Join(Environment.NewLine, ["builder.Services.AddCloudCommerceComponents(options =>", "{", "    options.Replace<MyCart>(CommerceComponentSlots.Cart);", "    options.Replace<MyPaymentSelector>(CommerceComponentSlots.PaymentSelector);", "    options.Replace<MyBookingCalendar>(CommerceComponentSlots.BookingSelector);", "});"]);
+});""";
+}

@@ -1,0 +1,132 @@
+@page "/booking"
+@rendermode InteractiveServer
+@inject IBookingStore BookingStore
+@inject IAvailabilityService Availability
+@inject IBookingService BookingService
+
+<PageTitle>CloudBooking studio</PageTitle>
+
+<DemoPageHeader Eyebrow="CloudBooking" Title="Capacity, availability, and reservations—without a product." Description="This page uses the real in-memory CloudBooking services to generate slots, reserve capacity, confirm, reschedule, and cancel. No database or payment package is required.">
+    <span class="demo-mode-badge"><i></i> Real domain workflow</span>
+</DemoPageHeader>
+
+<div class="demo-booking-studio">
+    <section class="demo-practitioner-card">
+        <div class="demo-practitioner-portrait"><span>NA</span><i></i></div>
+        <div><span class="demo-eyebrow">Architecture specialist</span><h2>Nour Alami</h2><p>Commerce systems · MENA launch strategy</p><ul><li>60 min session</li><li>2-person capacity</li><li>UTC timezone</li></ul></div>
+        <span class="demo-rating">★ 4.9 <small>128 sessions</small></span>
+    </section>
+
+    @if (_loading)
+    {
+        <div class="demo-loading"><span></span><p>Calculating availability…</p></div>
+    }
+    else
+    {
+        <BookingSelector Eyebrow="Live availability" Title="Choose your studio time" Description="Slots account for duration, capacity, reservations, and a 15-minute after-session buffer." TimeZoneLabel="UTC" Slots="_slots" Selected="_selectedSlot" OnSelected="SelectSlot" />
+    }
+
+    <aside class="demo-booking-summary">
+        <header><span class="demo-eyebrow">Reservation</span><h2>Your session</h2></header>
+        <div class="demo-booking-summary-date"><span>◷</span><div><strong>@SelectedDate</strong><small>@SelectedTime</small></div></div>
+        <dl><div><dt>Service</dt><dd>Architecture Studio</dd></div><div><dt>Duration</dt><dd>60 minutes</dd></div><div><dt>Capacity</dt><dd>1 of 2</dd></div><div><dt>Status</dt><dd><span class="demo-reservation-status demo-reservation-status--@StatusTone">@StatusLabel</span></dd></div></dl>
+        @if (_reservation is null)
+        {
+            <button class="demo-button demo-button--primary demo-button--wide" type="button" disabled="@(_selectedSlot is null)" @onclick="ReserveAsync">Reserve this time</button>
+        }
+        else if (_reservation.Status == ReservationStatuses.Pending)
+        {
+            <button class="demo-button demo-button--primary demo-button--wide" type="button" @onclick="ConfirmAsync">Confirm reservation</button>
+            <button class="demo-button demo-button--ghost demo-button--wide" type="button" disabled="@(_selectedSlot?.StartsAt == _reservation.StartsAt)" @onclick="RescheduleAsync">Reschedule to selected slot</button>
+            <button class="demo-text-button" type="button" @onclick="CancelAsync">Cancel reservation</button>
+        }
+        else if (_reservation.Status == ReservationStatuses.Confirmed)
+        {
+            <button class="demo-button demo-button--ghost demo-button--wide" type="button" disabled="@(_selectedSlot?.StartsAt == _reservation.StartsAt)" @onclick="RescheduleAsync">Reschedule to selected slot</button>
+            <button class="demo-text-button" type="button" @onclick="CancelAsync">Cancel reservation</button>
+        }
+        else
+        {
+            <button class="demo-button demo-button--primary demo-button--wide" type="button" @onclick="StartAgain">Book another session</button>
+        }
+        <p class="demo-booking-message" role="status">@_message</p>
+    </aside>
+</div>
+
+<section class="demo-section demo-booking-boundaries">
+    <DemoPageHeader Eyebrow="Standalone by design" Title="The booking domain owns time—not commerce." Description="Applications decide whether a reservation represents a consultation, room, table, vehicle, clinic resource, or something else." />
+    <div class="demo-boundary-grid"><article><span>CloudBooking owns</span><strong>Availability · capacity · buffers · blackouts · reservation state</strong></article><article><span>Your application owns</span><strong>Service meaning · customer UX · policies · persistence choice</strong></article><article><span>Optional integration</span><strong>CloudPayments authorization · CloudCommerce checkout attachment</strong></article></div>
+</section>
+
+@code {
+    private static readonly BookingServiceReference Service = new("architecture-session", "Architecture Studio", TimeSpan.FromMinutes(60), BufferAfter: TimeSpan.FromMinutes(15));
+    private IReadOnlyList<TimeSlot> _slots = [];
+    private TimeSlot? _selectedSlot;
+    private Reservation? _reservation;
+    private bool _loading = true;
+    private string _message = "Choose an available time to continue.";
+
+    private string SelectedDate => (_reservation?.StartsAt ?? _selectedSlot?.StartsAt)?.ToString("dddd, dd MMMM") ?? "No time selected";
+    private string SelectedTime => (_reservation?.StartsAt ?? _selectedSlot?.StartsAt)?.ToString("HH:mm 'UTC'") ?? "Select from the calendar";
+    private string StatusLabel => _reservation?.Status.ToString() ?? "Not reserved";
+    private string StatusTone => _reservation?.Status.ToString().ToLowerInvariant() ?? "empty";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await BookingStore.SaveResourceAsync(new(DemoCatalog.ResourceId, "Nour Alami", 2, "UTC"));
+        AvailabilityRule[] rules = Enum.GetValues<DayOfWeek>().Select(day => new AvailabilityRule(day, new TimeOnly(9, 0), new TimeOnly(17, 0))).ToArray();
+        await BookingStore.SaveAvailabilityRulesAsync(DemoCatalog.ResourceId, rules);
+        await RefreshSlotsAsync();
+        _loading = false;
+    }
+
+    private async Task RefreshSlotsAsync()
+    {
+        DateTimeOffset start = new(DateTime.UtcNow.Date.AddDays(1), TimeSpan.Zero);
+        _slots = await Availability.GetAvailableSlotsAsync(new(DemoCatalog.ResourceId, Service, start, start.AddDays(5), TimeSpan.FromHours(1)));
+        _selectedSlot ??= _slots.FirstOrDefault();
+    }
+
+    private void SelectSlot(TimeSlot slot)
+    {
+        _selectedSlot = slot;
+        _message = _reservation is null ? "Time selected. Reserve it when ready." : "New time selected. Use reschedule to apply it.";
+    }
+
+    private async Task ReserveAsync()
+    {
+        if (_selectedSlot is null)
+            return;
+        _reservation = await BookingService.ReserveAsync(new(DemoCatalog.ResourceId, Service, _selectedSlot.StartsAt, CustomerReference: "demo-guest"));
+        _message = "Capacity reserved. You can now confirm, reschedule, or cancel.";
+        await RefreshSlotsAsync();
+    }
+
+    private async Task ConfirmAsync()
+    {
+        _reservation = await BookingService.ConfirmAsync(_reservation!.Id);
+        _message = "Reservation confirmed without requiring a payment integration.";
+    }
+
+    private async Task RescheduleAsync()
+    {
+        if (_selectedSlot is null)
+            return;
+        _reservation = await BookingService.RescheduleAsync(new(_reservation!.Id, _selectedSlot.StartsAt));
+        _message = "Reservation moved and old capacity released atomically.";
+        await RefreshSlotsAsync();
+    }
+
+    private async Task CancelAsync()
+    {
+        _reservation = await BookingService.CancelAsync(_reservation!.Id);
+        _message = "Reservation cancelled and capacity returned.";
+        await RefreshSlotsAsync();
+    }
+
+    private void StartAgain()
+    {
+        _reservation = null;
+        _message = "Choose a new time to continue.";
+    }
+}

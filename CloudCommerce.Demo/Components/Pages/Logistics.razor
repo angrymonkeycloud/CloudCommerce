@@ -1,0 +1,109 @@
+@page "/logistics"
+@rendermode InteractiveServer
+@inject IShippingProviderRegistry Registry
+
+<PageTitle>CloudLogistics control room</PageTitle>
+
+<DemoPageHeader Eyebrow="CloudLogistics" Title="From available stock to the customer’s door." Description="Compare carrier adapters, choose a rate, and move a normalized shipment through labels, transit, delivery, and tracking states.">
+    <span class="demo-mode-badge"><i></i> Carrier sandbox ready</span>
+</DemoPageHeader>
+
+<section class="demo-provider-grid demo-provider-grid--three">
+    @foreach (ProviderCardModel provider in Providers)
+    {
+        <ProviderCard Model="provider" Selected="@(_selectedProvider.Name == provider.Name)" OnSelected="SelectProvider" />
+    }
+</section>
+
+<section class="demo-control-room">
+    <div class="demo-control-main">
+        <header class="demo-panel-heading"><div><span class="demo-eyebrow">Live fulfillment scenario</span><h2>Beirut warehouse → Doha customer</h2></div><span class="demo-route-distance">1,824 km</span></header>
+        <div class="demo-route-map" aria-label="Simulated route from Beirut to Doha">
+            <div class="demo-map-grid"></div><span class="demo-map-city demo-map-city--origin"><i></i><b>Beirut</b><small>Origin · LB</small></span><span class="demo-map-route"></span><span class="demo-map-plane">➤</span><span class="demo-map-city demo-map-city--destination"><i></i><b>Doha</b><small>Destination · QA</small></span>
+        </div>
+        <div class="demo-inventory-strip"><span class="demo-inventory-icon">▦</span><div><strong>kit-essentials</strong><small>Beirut Central · Warehouse BEY-01</small></div><dl><div><dt>On hand</dt><dd>42</dd></div><div><dt>Reserved</dt><dd>8</dd></div><div><dt>Available</dt><dd>34</dd></div></dl><span class="demo-stock-badge">In stock</span></div>
+        <div class="demo-panel-section">
+            <ShippingSelector Title="Available carrier services" Description="Application-supplied demo rates use the same selection contract as real adapters." Options="Rates" Selected="_selectedRate" OnSelected="SelectRate" />
+        </div>
+    </div>
+    <div class="demo-control-aside">
+        <ShipmentTracker Shipment="_shipment" Events="TrackingEvents" Title="@ShipmentTitle" />
+        <button class="demo-button demo-button--primary demo-button--wide" type="button" @onclick="AdvanceShipment">@ShipmentAction <span>→</span></button>
+        <small class="demo-simulator-note">Progress is simulated locally. Provider adapters keep carrier payloads outside the CloudLogistics core.</small>
+    </div>
+</section>
+
+<section class="demo-section">
+    <DemoPageHeader Eyebrow="Carrier resources" Title="Go from demo to a real sandbox." Description="Use each carrier’s official developer material for credentials, request examples, test endpoints, and any label certification requirements." />
+    <div class="demo-resource-cards">
+        <article><span>01</span><div><strong>Register the adapter</strong><p>Add one provider package and configure only its credentials.</p></div></article>
+        <article><span>02</span><div><strong>Request normalized rates</strong><p>Keep carrier-specific service codes at the boundary.</p></div></article>
+        <article><span>03</span><div><strong>Create and track</strong><p>Labels and tracking events return through stable contracts.</p></div></article>
+    </div>
+</section>
+
+@code {
+    private IReadOnlyList<ProviderCardModel> Providers = [];
+    private ProviderCardModel _selectedProvider = DemoCatalog.ShippingProviders[0];
+    private ShippingSelection? _selectedRate;
+    private Shipment _shipment = new(Guid.NewGuid(), "Aramex", "priority", ShipmentStatuses.Pending, "AMC-DOH-240816", new Uri("https://www.aramex.com/track/results"));
+
+    private IReadOnlyList<ShippingSelection> Rates =>
+    [
+        new(_selectedProvider.Name, "economy", new Money("USD", 8.40m), DemoCatalog.WarehouseId),
+        new(_selectedProvider.Name, "priority", new Money("USD", 14.80m), DemoCatalog.WarehouseId),
+        new(_selectedProvider.Name, "same-day", new Money("USD", 27.50m), DemoCatalog.WarehouseId)
+    ];
+
+    private IReadOnlyList<ShipmentTrackingEvent> TrackingEvents =>
+    [
+        new("Shipment prepared", "Inventory reserved and package dimensions validated.", DateTimeOffset.Now.AddHours(-4), _shipment.Status >= ShipmentStatuses.LabelCreated, _shipment.Status == ShipmentStatuses.LabelCreated),
+        new("In carrier network", $"Accepted by {_shipment.Provider} at the origin facility.", _shipment.Status >= ShipmentStatuses.InTransit ? DateTimeOffset.Now.AddHours(-2) : null, _shipment.Status >= ShipmentStatuses.InTransit, _shipment.Status == ShipmentStatuses.InTransit),
+        new("Out for delivery", "Courier has the shipment for the final mile.", _shipment.Status >= ShipmentStatuses.OutForDelivery ? DateTimeOffset.Now : null, _shipment.Status >= ShipmentStatuses.OutForDelivery, _shipment.Status == ShipmentStatuses.OutForDelivery),
+        new("Delivered", "Recipient confirmation closes the fulfillment journey.", _shipment.Status == ShipmentStatuses.Delivered ? DateTimeOffset.Now : null, _shipment.Status == ShipmentStatuses.Delivered, _shipment.Status == ShipmentStatuses.Delivered)
+    ];
+
+    private string ShipmentTitle => _shipment.Status == ShipmentStatuses.Delivered ? "Delivered beautifully" : "Your order is moving";
+    private string ShipmentAction => _shipment.Status switch
+    {
+        ShipmentStatuses.Pending => "Create shipping label",
+        ShipmentStatuses.LabelCreated => "Hand to carrier",
+        ShipmentStatuses.InTransit => "Move to final mile",
+        ShipmentStatuses.OutForDelivery => "Confirm delivery",
+        _ => "Restart journey"
+    };
+
+    protected override void OnInitialized()
+    {
+        HashSet<string> installed = Registry.Providers.Select(provider => provider.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        Providers = DemoCatalog.ShippingProviders.Select(provider => provider with { IsConfigured = installed.Contains(provider.Name) }).ToArray();
+        _selectedProvider = Providers[0];
+        _selectedRate = Rates[1];
+    }
+
+    private void SelectProvider(ProviderCardModel provider)
+    {
+        _selectedProvider = provider;
+        _selectedRate = Rates[1];
+        _shipment = new(Guid.NewGuid(), provider.Name, _selectedRate.ServiceCode, ShipmentStatuses.Pending, $"AMC-{provider.Name.Replace(" ", string.Empty).ToUpperInvariant()}-01");
+    }
+
+    private void SelectRate(ShippingSelection rate)
+    {
+        _selectedRate = rate;
+        _shipment = _shipment with { ServiceCode = rate.ServiceCode };
+    }
+
+    private void AdvanceShipment()
+    {
+        ShipmentStatuses status = _shipment.Status switch
+        {
+            ShipmentStatuses.Pending => ShipmentStatuses.LabelCreated,
+            ShipmentStatuses.LabelCreated => ShipmentStatuses.InTransit,
+            ShipmentStatuses.InTransit => ShipmentStatuses.OutForDelivery,
+            ShipmentStatuses.OutForDelivery => ShipmentStatuses.Delivered,
+            _ => ShipmentStatuses.Pending
+        };
+        _shipment = _shipment with { Status = status, DeliveredAt = status == ShipmentStatuses.Delivered ? DateTimeOffset.UtcNow : null };
+    }
+}

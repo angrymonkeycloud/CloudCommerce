@@ -1,0 +1,10 @@
+@namespace AngryMonkey.CloudCommerce.Components.Pages
+
+<main class="commerce-checkout-page"><CommerceComponentHost Slot="CommerceComponentSlots.Checkout" Parameters="Parameters" /></main>
+
+@code {
+    [Parameter, EditorRequired] public required Cart Cart { get; set; }
+    [Parameter, EditorRequired] public required CommerceTotals Totals { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private Dictionary<string, object> Parameters => new() { [nameof(Components.CheckoutView.Cart)] = Cart, [nameof(Components.CheckoutView.Totals)] = Totals, [nameof(Components.CheckoutView.ChildContent)] = ChildContent! };
+}

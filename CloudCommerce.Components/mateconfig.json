@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "input": "src/css/cloud-commerce.less",
+      "output": "wwwroot/css/cloud-commerce.css",
+      "minify": false
+    }
+  ]
+}

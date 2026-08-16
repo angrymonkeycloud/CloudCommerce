@@ -1,0 +1,11 @@
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(Layout.MainLayout)">
+            <section class="demo-not-found"><span>404</span><h1>This route wandered off.</h1><p>Return to the ecosystem overview and keep exploring.</p><a class="demo-button demo-button--primary" href="/">Back to overview</a></section>
+        </LayoutView>
+    </NotFound>
+</Router>

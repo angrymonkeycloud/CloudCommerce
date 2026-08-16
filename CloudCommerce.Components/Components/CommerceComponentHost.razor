@@ -1,0 +1,9 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+@inject CommerceComponentOptions Options
+
+<DynamicComponent Type="Options.Get(Slot)" Parameters="Parameters" />
+
+@code {
+    [Parameter, EditorRequired] public CommerceComponentSlots Slot { get; set; }
+    [Parameter] public IDictionary<string, object>? Parameters { get; set; }
+}

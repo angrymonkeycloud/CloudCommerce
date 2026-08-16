@@ -1,0 +1,26 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<li class="commerce-cart-item">
+    <div class="commerce-cart-item-media" aria-hidden="true">@Initials</div>
+    <div class="commerce-cart-item-details">
+        <span>@(Item.Product.Metadata?.GetValueOrDefault("category") ?? "Item")</span>
+        <strong>@Item.Product.Title</strong>
+        <small>@(Item.Product.Reference ?? Item.Product.Id)</small>
+    </div>
+    <div class="commerce-cart-item-quantity">
+        <span>Qty</span>
+        <strong>@Item.Quantity</strong>
+    </div>
+    <div class="commerce-cart-item-price">
+        <strong>@(Item.Product.Price.Value * Item.Quantity).ToString("0.00")</strong>
+        <span>@Item.Product.Price.Currency</span>
+    </div>
+    <button class="commerce-cart-item-remove" type="button" @onclick="() => OnRemove.InvokeAsync(Item.Id)" aria-label="Remove @Item.Product.Title">×</button>
+</li>
+
+@code {
+    [Parameter, EditorRequired] public required CartItem Item { get; set; }
+    [Parameter] public EventCallback<Guid> OnRemove { get; set; }
+
+    private string Initials => string.Concat(Item.Product.Title.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+}

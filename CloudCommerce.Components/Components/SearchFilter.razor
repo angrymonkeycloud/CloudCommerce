@@ -1,0 +1,22 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<div class="commerce-search-filter">
+    <span aria-hidden="true">⌕</span>
+    <label class="commerce-visually-hidden" for="@InputId">Search catalog</label>
+    <input id="@InputId" value="@Query" @oninput="ChangedAsync" placeholder="@Placeholder" />
+    @if (!string.IsNullOrWhiteSpace(Query))
+    {
+        <button type="button" @onclick="ClearAsync" aria-label="Clear search">×</button>
+    }
+</div>
+
+@code {
+    private readonly string InputId = $"commerce-search-{Guid.NewGuid():N}";
+
+    [Parameter] public string? Query { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "Search products and services";
+    [Parameter] public EventCallback<string?> QueryChanged { get; set; }
+
+    private Task ChangedAsync(ChangeEventArgs args) => QueryChanged.InvokeAsync(args.Value?.ToString());
+    private Task ClearAsync() => QueryChanged.InvokeAsync(null);
+}

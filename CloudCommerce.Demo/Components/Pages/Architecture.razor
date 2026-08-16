@@ -1,0 +1,25 @@
+@page "/architecture"
+
+<PageTitle>CloudCommerce architecture</PageTitle>
+
+<DemoPageHeader Eyebrow="Architecture map" Title="Depend inward. Extract cleanly. Own less." Description="The ecosystem is intentionally asymmetric: specialized domains never point back to CloudCommerce, and public packages never depend on private CDM persistence." />
+
+<section class="demo-architecture-map" aria-label="CloudCommerce dependency map">
+    <div class="demo-architecture-node demo-architecture-node--commerce"><span>CC</span><div><strong>CloudCommerce</strong><small>Optional composition + workflow</small></div></div>
+    <div class="demo-architecture-lines"><i></i><i></i><i></i></div>
+    <div class="demo-architecture-domains"><article><span>CP</span><div><strong>CloudPayments</strong><small>Provider-neutral transactions</small></div></article><article><span>CL</span><div><strong>CloudLogistics</strong><small>Inventory, fulfillment, delivery</small></div></article><article><span>CB</span><div><strong>CloudBooking</strong><small>Availability and reservations</small></div></article></div>
+    <div class="demo-architecture-foundation"><span>Existing Angry Monkey Cloud foundations</span><div><b>CloudLogin</b><b>CloudGeography</b><b>CloudComponents</b><b>CloudMaps</b></div></div>
+</section>
+
+<section class="demo-principles">
+    <article><span>01</span><h2>Applications own meaning</h2><p>No universal product or subscription engine. Lightweight references cross the package boundary while authoritative models stay with the application.</p></article>
+    <article><span>02</span><h2>Providers stay isolated</h2><p>Stripe, MyFatoorah, SkipCash, Aramex, and every other adapter depend on their specialized core—not on CloudCommerce.</p></article>
+    <article><span>03</span><h2>Persistence is replaceable</h2><p>Public store contracts accept in-memory, private CDM, or application-specific implementations. CDM never leaks into a public package.</p></article>
+</section>
+
+<section class="demo-boundary-table-section">
+    <DemoPageHeader Eyebrow="Ownership map" Title="Clear boundaries make composition predictable." Description="Each domain says what it owns—and, just as importantly, what it refuses to own." />
+    <div class="demo-table-wrap"><table class="demo-boundary-table"><thead><tr><th>Domain</th><th>Owns</th><th>Does not own</th><th>Can run alone</th></tr></thead><tbody><tr><th>CloudPayments</th><td>Transactions, provider calls, webhooks, tokens</td><td>Pricing, coupons, product rules</td><td><span>Yes</span></td></tr><tr><th>CloudLogistics</th><td>Stock, reservations, fulfillment, shipments</td><td>Carts, payments, products</td><td><span>Yes</span></td></tr><tr><th>CloudBooking</th><td>Availability, capacity, reservation lifecycle</td><td>Products, checkout, required payment</td><td><span>Yes</span></td></tr><tr><th>CloudCommerce</th><td>Cart, pricing composition, checkout, order</td><td>Provider implementations, authoritative catalog</td><td><span>Headless</span></td></tr></tbody></table></div>
+</section>
+
+<DemoCallout Tone="success" Icon="✓" Title="Ready for eventual repository extraction">Project references already follow the future repository direction; no domain depends on a private filesystem path or a concrete persistence package.</DemoCallout>

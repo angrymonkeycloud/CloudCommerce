@@ -1,0 +1,46 @@
+@namespace AngryMonkey.CloudCommerce.Components.Components
+
+<fieldset class="commerce-shipping-selector">
+    <legend>
+        <span class="commerce-eyebrow">Delivery</span>
+        <strong>@Title</strong>
+        <small>@Description</small>
+    </legend>
+    <div class="commerce-shipping-selector-options">
+        @foreach (ShippingSelection option in Options)
+        {
+            bool selected = Selected == option;
+            <label class="commerce-shipping-selector-option @(selected ? "is-selected" : null)">
+                <input type="radio"
+                       name="@GroupName"
+                       checked="@selected"
+                       @onchange="() => OnSelected.InvokeAsync(option)" />
+                <span class="commerce-shipping-selector-icon" aria-hidden="true">⌁</span>
+                <span class="commerce-shipping-selector-copy">
+                    <span><strong>@option.Provider</strong><small>@ServiceLabel(option.ServiceCode)</small></span>
+                    <small>Tracked fulfillment · warehouse @option.WarehouseId.ToString("N")[..6]</small>
+                </span>
+                <span class="commerce-shipping-selector-price">
+                    <strong>@option.Price.Value.ToString("0.00")</strong>
+                    <small>@option.Price.Currency</small>
+                </span>
+                <span class="commerce-radio" aria-hidden="true"></span>
+            </label>
+        }
+    </div>
+</fieldset>
+
+@code {
+    private readonly string GroupName = $"commerce-shipping-{Guid.NewGuid():N}";
+
+    [Parameter] public string Title { get; set; } = "Select delivery";
+    [Parameter] public string Description { get; set; } = "Rates are supplied by CloudLogistics adapters.";
+    [Parameter] public IReadOnlyList<ShippingSelection> Options { get; set; } = [];
+    [Parameter] public ShippingSelection? Selected { get; set; }
+    [Parameter] public EventCallback<ShippingSelection> OnSelected { get; set; }
+
+    private static string ServiceLabel(string serviceCode) => string.Join(' ', serviceCode
+        .Replace('-', ' ')
+        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Select(word => char.ToUpperInvariant(word[0]) + word[1..]));
+}

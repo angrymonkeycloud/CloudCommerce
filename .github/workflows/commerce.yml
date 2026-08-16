@@ -1,0 +1,147 @@
+name: Commerce ecosystem
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'CloudPayments*/**'
+      - 'CloudLogistics*/**'
+      - 'CloudBooking*/**'
+      - 'CloudCommerce*/**'
+      - 'CloudLogin.Contracts/Interfaces/ICloudLoginAccountRegistry.cs'
+      - 'CloudLogin.Contracts/Models/Organizations.cs'
+      - 'CloudLogin.Contracts/Models/Subscriptions.cs'
+      - 'CloudLogin.Server/Services/AccountRegistries.cs'
+      - 'CloudLogin.Server/AccountRegistryServiceCollectionExtensions.cs'
+      - 'docs/commerce-ecosystem/**'
+      - '.github/workflows/commerce.yml'
+  pull_request:
+    paths:
+      - 'CloudPayments*/**'
+      - 'CloudLogistics*/**'
+      - 'CloudBooking*/**'
+      - 'CloudCommerce*/**'
+      - 'CloudLogin.Contracts/**'
+      - 'CloudLogin.Server/**'
+      - 'docs/commerce-ecosystem/**'
+      - '.github/workflows/commerce.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: commerce-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  test:
+    name: Test ${{ matrix.domain }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - domain: payments
+            project: CloudPayments.Tests/CloudPayments.Tests.csproj
+          - domain: payment-providers
+            project: CloudPayments.Providers.Tests/CloudPayments.Providers.Tests.csproj
+          - domain: logistics
+            project: CloudLogistics.Tests/CloudLogistics.Tests.csproj
+          - domain: logistics-providers
+            project: CloudLogistics.Providers.Tests/CloudLogistics.Providers.Tests.csproj
+          - domain: booking
+            project: CloudBooking.Tests/CloudBooking.Tests.csproj
+          - domain: commerce
+            project: CloudCommerce.Tests/CloudCommerce.Tests.csproj
+          - domain: login-registry
+            project: CloudLogin.Tests/CloudLogin.Tests.csproj
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore "${{ matrix.project }}"
+
+      - name: Test
+        run: dotnet test "${{ matrix.project }}" --configuration Release --no-restore --logger "trx;LogFileName=${{ matrix.domain }}.trx" --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: commerce-${{ matrix.domain }}-results
+          path: TestResults
+          if-no-files-found: warn
+
+  package:
+    name: Build demo and validate packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build demo and UI
+        run: |
+          dotnet build CloudCommerce.Components/CloudCommerce.Components.csproj --configuration Release
+          dotnet build CloudCommerce.Demo/CloudCommerce.Demo.csproj --configuration Release
+
+      - name: Pack public libraries
+        shell: bash
+        run: |
+          set -euo pipefail
+          projects=(
+            CloudPayments/CloudPayments.csproj
+            CloudPayments.Stripe/CloudPayments.Stripe.csproj
+            CloudPayments.PayPal/CloudPayments.PayPal.csproj
+            CloudPayments.Adyen/CloudPayments.Adyen.csproj
+            CloudLogistics/CloudLogistics.csproj
+            CloudLogistics.Aramex/CloudLogistics.Aramex.csproj
+            CloudLogistics.DhlExpress/CloudLogistics.DhlExpress.csproj
+            CloudLogistics.FedEx/CloudLogistics.FedEx.csproj
+            CloudBooking/CloudBooking.csproj
+            CloudCommerce/CloudCommerce.csproj
+            CloudCommerce.Components/CloudCommerce.Components.csproj
+          )
+          for project in "${projects[@]}"; do
+            dotnet pack "$project" --configuration Release --output artifacts
+          done
+
+      - name: Validate documentation and public boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f CloudPayments/docs/index.md
+          test -f CloudPayments/docs/providers.md
+          test -f CloudLogistics/docs/index.md
+          test -f CloudLogistics/docs/carriers.md
+          test -f CloudBooking/docs/index.md
+          test -f CloudCommerce/docs/index.md
+          test -f CloudCommerce/docs/demo.md
+          test -f CloudCommerce.Components/src/css/cloud-commerce.less
+          if grep -R "CDM.CloudCommerce\|Cloud.CDM" CloudPayments* CloudLogistics* CloudBooking* CloudCommerce* --include='*.csproj' --include='*.cs'; then
+            echo "::error::A public commerce project references private CDM code."
+            exit 1
+          fi
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: commerce-packages
+          path: artifacts

@@ -1,0 +1,21 @@
+@namespace AngryMonkey.CloudCommerce.Components.Pages
+
+<main class="commerce-catalog-page">
+    <h1>Catalog</h1>
+    <CommerceComponentHost Slot="CommerceComponentSlots.SearchFilter" Parameters="SearchParameters" />
+    <div class="commerce-catalog-page-products">
+        @foreach (ProductPresentation product in FilteredProducts)
+        {
+            <CommerceComponentHost Slot="CommerceComponentSlots.ProductCard" Parameters="ProductParameters(product)" />
+        }
+    </div>
+</main>
+
+@code {
+    private string? Query { get; set; }
+    [Parameter] public IReadOnlyList<ProductPresentation> Products { get; set; } = [];
+    [Parameter] public EventCallback<ProductPresentation> OnAdd { get; set; }
+    private IEnumerable<ProductPresentation> FilteredProducts => string.IsNullOrWhiteSpace(Query) ? Products : Products.Where(product => product.Title.Contains(Query, StringComparison.OrdinalIgnoreCase));
+    private Dictionary<string, object> SearchParameters => new() { [nameof(Components.SearchFilter.Query)] = Query ?? string.Empty, [nameof(Components.SearchFilter.QueryChanged)] = EventCallback.Factory.Create<string?>(this, value => Query = value) };
+    private Dictionary<string, object> ProductParameters(ProductPresentation product) => new() { [nameof(Components.ProductCard.Product)] = product, [nameof(Components.ProductCard.OnAdd)] = OnAdd };
+}
