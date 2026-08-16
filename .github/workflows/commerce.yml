@@ -8,11 +8,6 @@ on:
       - 'CloudLogistics*/**'
       - 'CloudBooking*/**'
       - 'CloudCommerce*/**'
-      - 'CloudLogin.Contracts/Interfaces/ICloudLoginAccountRegistry.cs'
-      - 'CloudLogin.Contracts/Models/Organizations.cs'
-      - 'CloudLogin.Contracts/Models/Subscriptions.cs'
-      - 'CloudLogin.Server/Services/AccountRegistries.cs'
-      - 'CloudLogin.Server/AccountRegistryServiceCollectionExtensions.cs'
       - 'docs/commerce-ecosystem/**'
       - '.github/workflows/commerce.yml'
   pull_request:
@@ -21,8 +16,6 @@ on:
       - 'CloudLogistics*/**'
       - 'CloudBooking*/**'
       - 'CloudCommerce*/**'
-      - 'CloudLogin.Contracts/**'
-      - 'CloudLogin.Server/**'
       - 'docs/commerce-ecosystem/**'
       - '.github/workflows/commerce.yml'
 
@@ -58,8 +51,6 @@ jobs:
             project: CloudBooking.Tests/CloudBooking.Tests.csproj
           - domain: commerce
             project: CloudCommerce.Tests/CloudCommerce.Tests.csproj
-          - domain: login-registry
-            project: CloudLogin.Tests/CloudLogin.Tests.csproj
 
     steps:
       - name: Check out repository

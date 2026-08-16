@@ -8,14 +8,9 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/.libraries/">
-    <Project Path="../CloudComponents/CloudComponents.DataGrid/CloudComponents.DataGrid.csproj" />
-    <Project Path="../CloudComponents/CloudComponents.Icons/CloudComponents.Icons.csproj">
-      <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+    <Project Path="../CloudLogin/CloudLogin.Contracts/CloudLogin.Contracts.csproj">
+      <BuildType Solution="Release_Server|*" Project="Release" />
     </Project>
-    <Project Path="../CloudComponents/CloudComponents.Maps/CloudComponents.Maps.csproj">
-      <BuildType Solution="Release_Server|Any CPU" Project="Release" />
-    </Project>
-    <Project Path="../CloudComponents/CloudComponents/CloudComponents.csproj" />
   </Folder>
   <Folder Name="/Booking/">
     <Project Path="CloudBooking.Tests/CloudBooking.Tests.csproj">

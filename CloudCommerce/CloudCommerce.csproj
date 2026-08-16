@@ -16,10 +16,10 @@
   <ItemGroup>
     <PackageReference Include="AngryMonkey.CloudGeography" Version="2.8.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <ProjectReference Include="..\..\CloudLogin\CloudLogin.Contracts\CloudLogin.Contracts.csproj" />
     <ProjectReference Include="..\CloudBooking\CloudBooking.csproj" />
     <ProjectReference Include="..\CloudLogistics\CloudLogistics.csproj" />
     <ProjectReference Include="..\CloudPayments\CloudPayments.csproj" />
-    <ProjectReference Include="..\CloudLogin.Contracts\CloudLogin.Contracts.csproj" />
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>
