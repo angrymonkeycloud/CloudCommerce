@@ -4,6 +4,7 @@
 
 <DemoPageHeader Eyebrow="Architecture map" Title="Depend inward. Extract cleanly. Own less." Description="The ecosystem is intentionally asymmetric: specialized domains never point back to CloudCommerce, and public packages never depend on private CDM persistence." />
 
+<DemoExample Title="Independent project boundaries" Kind="Architecture reference" Description="The preview shows dependency direction; the code tab shows the project references an application composition can use." Code="@DemoCodeSamples.Architecture" FileName="Application.csproj">
 <section class="demo-architecture-map" aria-label="CloudCommerce dependency map">
     <div class="demo-architecture-node demo-architecture-node--commerce"><span>CC</span><div><strong>CloudCommerce</strong><small>Optional composition + workflow</small></div></div>
     <div class="demo-architecture-lines"><i></i><i></i><i></i></div>
@@ -23,3 +24,4 @@
 </section>
 
 <DemoCallout Tone="success" Icon="✓" Title="Ready for eventual repository extraction">Project references already follow the future repository direction; no domain depends on a private filesystem path or a concrete persistence package.</DemoCallout>
+</DemoExample>

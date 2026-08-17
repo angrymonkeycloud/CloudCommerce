@@ -7,10 +7,11 @@
     <base href="/" />
     <link rel="stylesheet" href="_content/AngryMonkey.CloudCommerce.Components/css/cloud-commerce.css" />
     <link rel="stylesheet" href="css/demo.css" />
-    <HeadOutlet />
+    <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 <body>
-    <Routes />
+    <Routes @rendermode="InteractiveServer" />
+    <script src="js/demo.js"></script>
     <script src="_framework/blazor.web.js"></script>
 </body>
 </html>

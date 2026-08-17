@@ -31,7 +31,10 @@ builder.Services.AddCloudCommercePayments();
 builder.Services.AddCloudCommerceLogistics();
 builder.Services.AddCloudCommerceBooking();
 builder.Services.AddCloudCommerceComponents();
-builder.Services.AddScoped<PaymentFlowSimulator>();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<ProviderCredentialStore>();
+builder.Services.AddScoped<RuntimePaymentProviderFactory>();
+builder.Services.AddScoped<SandboxPaymentRunner>();
 
 IConfiguration configuration = builder.Configuration;
 
@@ -42,7 +45,7 @@ if (!string.IsNullOrWhiteSpace(configuration["Stripe:SecretKey"]))
         options.WebhookSecret = configuration["Stripe:WebhookSecret"] ?? string.Empty;
     });
 
-if (!string.IsNullOrWhiteSpace(configuration["PayPal:ClientId"]))
+if (!string.IsNullOrWhiteSpace(configuration["PayPal:ClientId"]) && !string.IsNullOrWhiteSpace(configuration["PayPal:ClientSecret"]))
     builder.Services.AddPayPalCloudPayments(options =>
     {
         options.ClientId = configuration["PayPal:ClientId"]!;
@@ -50,7 +53,7 @@ if (!string.IsNullOrWhiteSpace(configuration["PayPal:ClientId"]))
         options.WebhookId = configuration["PayPal:WebhookId"] ?? string.Empty;
     });
 
-if (!string.IsNullOrWhiteSpace(configuration["Adyen:ApiKey"]))
+if (!string.IsNullOrWhiteSpace(configuration["Adyen:ApiKey"]) && !string.IsNullOrWhiteSpace(configuration["Adyen:MerchantAccount"]))
     builder.Services.AddAdyenCloudPayments(options =>
     {
         options.ApiKey = configuration["Adyen:ApiKey"]!;
@@ -66,7 +69,7 @@ if (!string.IsNullOrWhiteSpace(configuration["MyFatoorah:ApiToken"]))
         options.PaymentMethodId = configuration.GetValue<int>("MyFatoorah:PaymentMethodId");
     });
 
-if (!string.IsNullOrWhiteSpace(configuration["SkipCash:ClientId"]))
+if (!string.IsNullOrWhiteSpace(configuration["SkipCash:ClientId"]) && !string.IsNullOrWhiteSpace(configuration["SkipCash:KeyId"]) && !string.IsNullOrWhiteSpace(configuration["SkipCash:KeySecret"]))
     builder.Services.AddSkipCashCloudPayments(options =>
     {
         options.ClientId = configuration["SkipCash:ClientId"]!;
@@ -82,7 +85,7 @@ if (!string.IsNullOrWhiteSpace(configuration["Tap:SecretKey"]))
         options.MerchantId = configuration["Tap:MerchantId"] ?? string.Empty;
     });
 
-if (!string.IsNullOrWhiteSpace(configuration["PayTabs:ServerKey"]))
+if (!string.IsNullOrWhiteSpace(configuration["PayTabs:ServerKey"]) && configuration.GetValue<long>("PayTabs:ProfileId") > 0)
     builder.Services.AddPayTabsCloudPayments(options =>
     {
         options.ProfileId = configuration.GetValue<long>("PayTabs:ProfileId");

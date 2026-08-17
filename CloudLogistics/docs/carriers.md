@@ -20,4 +20,4 @@ Carrier requests map `LogisticsAddress` country and subdivision codes through Cl
 
 Supply credentials through user secrets, environment variables, or managed secret storage. Unit tests use injected HTTP handlers and captured response shapes; they never call carrier sandboxes. The CloudCommerce demo simulates rate selection and tracking progression locally while linking to the official resources above.
 
-See [CloudLogistics](index.md), [payment providers](../../CloudPayments/docs/providers.md), the [CloudCommerce demo](../../CloudCommerce/docs/demo.md), and the [commerce ecosystem architecture](../../docs/commerce-ecosystem/index.md).
+See [CloudLogistics](index.md), [payment providers](../../CloudPayments/docs/providers.md), the [CloudCommerce demo](../../CloudCommerce/docs/demo.md), and the [commerce ecosystem architecture](../../README.md).

@@ -1,5 +1,4 @@
 @page "/logistics"
-@rendermode InteractiveServer
 @inject IShippingProviderRegistry Registry
 
 <PageTitle>CloudLogistics control room</PageTitle>
@@ -8,10 +7,11 @@
     <span class="demo-mode-badge"><i></i> Carrier sandbox ready</span>
 </DemoPageHeader>
 
+<DemoExample Title="Carrier selection and shipment lifecycle" ComponentName="ShipmentTracker" Description="This page composes reusable ProviderCard, ShippingSelector, and ShipmentTracker components with CloudLogistics carrier abstractions." Code="@DemoCodeSamples.Logistics" FileName="Program.cs">
 <section class="demo-provider-grid demo-provider-grid--three">
     @foreach (ProviderCardModel provider in Providers)
     {
-        <ProviderCard Model="provider" Selected="@(_selectedProvider.Name == provider.Name)" OnSelected="SelectProvider" />
+        <ProviderCard Model="provider" Selected="@(_selectedProvider.Name == provider.Name)" ActionLabel="Select carrier" OnSelected="SelectProvider" />
     }
 </section>
 
@@ -41,6 +41,8 @@
         <article><span>03</span><div><strong>Create and track</strong><p>Labels and tracking events return through stable contracts.</p></div></article>
     </div>
 </section>
+
+</DemoExample>
 
 @code {
     private IReadOnlyList<ProviderCardModel> Providers = [];

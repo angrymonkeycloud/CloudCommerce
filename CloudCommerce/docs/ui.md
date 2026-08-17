@@ -42,4 +42,4 @@ Source styles live in `CloudCommerce.Components/src/css/cloud-commerce.less`; Cl
 
 Default class names use the `commerce-` block prefix. Applications can override the focused CSS custom-property surface, provide a wrapper theme through `data-commerce-theme`, extend styles in application-owned LESS, or replace component markup entirely.
 
-See [CloudCommerce](index.md), the [interactive demo](demo.md), and the [ecosystem architecture](../../docs/commerce-ecosystem/index.md).
+See [CloudCommerce](index.md), the [interactive demo](demo.md), and the [ecosystem architecture](../../README.md).

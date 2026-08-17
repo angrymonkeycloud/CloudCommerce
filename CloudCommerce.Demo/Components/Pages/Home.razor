@@ -1,19 +1,15 @@
 @page "/"
-@rendermode InteractiveServer
 @inject IPaymentProviderRegistry PaymentProviders
 @inject IShippingProviderRegistry ShippingProviders
 
-<PageTitle>CloudCommerce ecosystem</PageTitle>
+<PageTitle>CloudCommerce developer ecosystem</PageTitle>
 
 <section class="demo-hero">
     <div class="demo-hero-copy">
         <span class="demo-kicker"><i></i> Four independent domains. One composed journey.</span>
         <h1>Commerce infrastructure,<br /><em>designed to come apart.</em></h1>
         <p>Payments, logistics, booking, and commerce orchestration that work independently—then compose into a storefront without taking ownership of your product model.</p>
-        <div class="demo-hero-actions">
-            <a class="demo-button demo-button--primary" href="storefront">Experience the storefront <span>→</span></a>
-            <a class="demo-button demo-button--ghost" href="architecture">Explore the architecture</a>
-        </div>
+        <div class="demo-hero-actions"><a class="demo-button demo-button--primary" href="storefront">Experience the storefront <span>→</span></a><a class="demo-button demo-button--ghost" href="payments">Open real sandbox labs</a></div>
         <div class="demo-hero-trust"><span><b>✓</b> Headless-first</span><span><b>✓</b> Provider-neutral</span><span><b>✓</b> Replaceable UI</span></div>
     </div>
     <div class="demo-hero-visual" aria-label="CloudCommerce domain composition">
@@ -25,26 +21,30 @@
     </div>
 </section>
 
-<section class="demo-metrics" aria-label="Ecosystem highlights">
-    <article><span>01</span><div><strong>Independent foundations</strong><small>No circular dependencies</small></div></article>
-    <article><span>07</span><div><strong>Payment adapters</strong><small>Global and MENA coverage</small></div></article>
-    <article><span>03</span><div><strong>Carrier adapters</strong><small>Rates, labels, and tracking</small></div></article>
-    <article><span>∞</span><div><strong>Application models</strong><small>Your products stay yours</small></div></article>
+<section class="demo-portal-stats">
+    <article><strong>7</strong><span>real payment sandbox labs</span><a href="payments">Choose provider →</a></article>
+    <article><strong>12</strong><span>public component reference pages</span><a href="components">Browse components →</a></article>
+    <article><strong>3</strong><span>carrier adapter workflows</span><a href="logistics">Open logistics →</a></article>
+    <article><strong>1</strong><span>complete storefront journey</span><a href="storefront">Run storefront →</a></article>
 </section>
 
+<DemoExample Title="Register the ecosystem" Kind="Application startup" Description="Install only the domains your application needs. CloudCommerce is the optional composition layer; the specialized services remain independently usable." Code="@DemoCodeSamples.Composition" FileName="Program.cs">
+    <div class="demo-composition-preview"><article><span>CloudPayments</span><strong>Provider-neutral transactions</strong></article><article><span>CloudLogistics</span><strong>Inventory and delivery</strong></article><article><span>CloudBooking</span><strong>Availability and reservations</strong></article><b>→</b><article class="primary"><span>CloudCommerce</span><strong>Optional checkout orchestration</strong></article></div>
+</DemoExample>
+
 <section class="demo-section">
-    <DemoPageHeader Eyebrow="Explore the system" Title="Start with a complete journey—or one small piece." Description="Every page is interactive, backed by the public abstractions, and designed to teach the extension points without requiring live credentials." />
+    <DemoPageHeader Eyebrow="Developer portal" Title="Choose a complete journey, a real adapter lab, or one shipped component." Description="Package surfaces and demo-only test harnesses are labeled explicitly on every reference page." />
     <div class="demo-feature-grid">
-        <a class="demo-feature-card demo-feature-card--store" href="storefront"><span class="demo-feature-icon">◇</span><div><small>Full composition</small><h2>Storefront journey</h2><p>Browse, book, ship, select a regional payment provider, and complete a safe end-to-end checkout.</p></div><b>Open journey →</b></a>
-        <a class="demo-feature-card" href="payments"><span class="demo-feature-icon">▣</span><div><small>Financial orchestration</small><h2>Payment lab</h2><p>Compare provider capabilities and walk through normalized create, action, authorize, capture, and refund states.</p></div><b>Explore payments →</b></a>
-        <a class="demo-feature-card" href="logistics"><span class="demo-feature-icon">⇢</span><div><small>Physical movement</small><h2>Logistics control room</h2><p>Compare carriers, choose delivery services, and progress a shipment through a live tracking timeline.</p></div><b>Explore logistics →</b></a>
-        <a class="demo-feature-card" href="booking"><span class="demo-feature-icon">◷</span><div><small>Time and capacity</small><h2>Booking studio</h2><p>Generate real availability, reserve capacity, confirm, reschedule, and cancel without any persistence dependency.</p></div><b>Explore booking →</b></a>
+        <a class="demo-feature-card demo-feature-card--store" href="storefront"><span class="demo-feature-icon">◇</span><div><small>Full composition</small><h2>Storefront journey</h2><p>Add to cart, apply discounts, reserve a booking, select shipping and payment, and complete checkout.</p></div><b>Open journey →</b></a>
+        <a class="demo-feature-card" href="payments"><span class="demo-feature-icon">▣</span><div><small>Seven dedicated pages</small><h2>Real payment labs</h2><p>Configure your own test keys, call the real adapter sandbox, and open hosted checkout.</p></div><b>Choose provider →</b></a>
+        <a class="demo-feature-card" href="components"><span class="demo-feature-icon">⌘</span><div><small>Twelve dedicated pages</small><h2>Component API catalog</h2><p>See what ships in NuGet, its namespace, source, parameters, events, live UI, and code.</p></div><b>Browse components →</b></a>
+        <a class="demo-feature-card" href="booking"><span class="demo-feature-icon">◷</span><div><small>Time and capacity</small><h2>Booking studio</h2><p>Generate availability, reserve capacity, confirm, reschedule, cancel, and release capacity.</p></div><b>Explore booking →</b></a>
     </div>
 </section>
 
-<DemoCallout Tone="success" Icon="✓" Title="Safe by default">The demo never sends a transaction to a provider. Configure sandbox credentials locally when you are ready; all learning links point to official provider resources.</DemoCallout>
+<DemoCallout Tone="warning" Icon="!" Title="Safe storefront, real provider labs">The storefront uses a local safe driver. Dedicated payment labs send real provider sandbox requests only after you configure your own test credentials; every lab links to official setup and test-card resources.</DemoCallout>
 
 @code {
-    private int PaymentCount => Math.Max(7, PaymentProviders.Providers.Count);
+    private int PaymentCount => Math.Max(7, PaymentProviders.Providers.Count(provider => provider.Name != "Demo"));
     private int ShippingCount => Math.Max(3, ShippingProviders.Providers.Count(provider => provider.Name != "Demo Shipping"));
 }

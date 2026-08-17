@@ -1,5 +1,4 @@
 @page "/booking"
-@rendermode InteractiveServer
 @inject IBookingStore BookingStore
 @inject IAvailabilityService Availability
 @inject IBookingService BookingService
@@ -10,6 +9,7 @@
     <span class="demo-mode-badge"><i></i> Real domain workflow</span>
 </DemoPageHeader>
 
+<DemoExample Title="Availability and reservation lifecycle" ComponentName="BookingSelector" Description="BookingSelector is the reusable UI shown inside a real CloudBooking reserve, confirm, reschedule, cancel, and capacity-release workflow." Code="@DemoCodeSamples.Booking" FileName="Booking.razor">
 <div class="demo-booking-studio">
     <section class="demo-practitioner-card">
         <div class="demo-practitioner-portrait"><span>NA</span><i></i></div>
@@ -57,6 +57,8 @@
     <DemoPageHeader Eyebrow="Standalone by design" Title="The booking domain owns time—not commerce." Description="Applications decide whether a reservation represents a consultation, room, table, vehicle, clinic resource, or something else." />
     <div class="demo-boundary-grid"><article><span>CloudBooking owns</span><strong>Availability · capacity · buffers · blackouts · reservation state</strong></article><article><span>Your application owns</span><strong>Service meaning · customer UX · policies · persistence choice</strong></article><article><span>Optional integration</span><strong>CloudPayments authorization · CloudCommerce checkout attachment</strong></article></div>
 </section>
+
+</DemoExample>
 
 @code {
     private static readonly BookingServiceReference Service = new("architecture-session", "Architecture Studio", TimeSpan.FromMinutes(60), BufferAfter: TimeSpan.FromMinutes(15));

@@ -7,11 +7,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Folder Name="/.libraries/">
-    <Project Path="../CloudLogin/CloudLogin.Contracts/CloudLogin.Contracts.csproj">
-      <BuildType Solution="Release_Server|*" Project="Release" />
-    </Project>
-  </Folder>
   <Folder Name="/Booking/">
     <Project Path="CloudBooking.Tests/CloudBooking.Tests.csproj">
       <BuildType Solution="Release_Server|*" Project="Debug" />
@@ -22,6 +17,9 @@
   </Folder>
   <Folder Name="/Commerce/">
     <Project Path="CloudCommerce.Components/CloudCommerce.Components.csproj">
+      <BuildType Solution="Release_Server|*" Project="Debug" />
+    </Project>
+    <Project Path="CloudCommerce.Demo.Tests/CloudCommerce.Demo.Tests.csproj">
       <BuildType Solution="Release_Server|*" Project="Debug" />
     </Project>
     <Project Path="CloudCommerce.Demo/CloudCommerce.Demo.csproj">

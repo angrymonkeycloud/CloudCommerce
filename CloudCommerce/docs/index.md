@@ -34,4 +34,4 @@ Applications may register only `AddCloudCommerce()` for cart/order workflows tha
 
 CloudCommerce does not own payment-provider SDKs, carrier SDKs, authoritative products, a universal subscription engine, geography datasets, identity memberships, CDM forms, grids, dashboards, Cosmos, or Azure Storage.
 
-See the [CloudCommerce demo](demo.md), [CloudCommerce UI customization](ui.md), the [ecosystem architecture](../../docs/commerce-ecosystem/index.md), [CloudPayments](../../CloudPayments/docs/index.md), [CloudLogistics](../../CloudLogistics/docs/index.md), and [CloudBooking](../../CloudBooking/docs/index.md).
+See the [CloudCommerce demo](demo.md), [CloudCommerce UI customization](ui.md), the [ecosystem architecture](../../README.md), [CloudPayments](../../CloudPayments/docs/index.md), [CloudLogistics](../../CloudLogistics/docs/index.md), and [CloudBooking](../../CloudBooking/docs/index.md).

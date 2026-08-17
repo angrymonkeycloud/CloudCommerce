@@ -1,16 +1,23 @@
 <a class="demo-brand" href="/">
     <span class="demo-brand-mark" aria-hidden="true">AM</span>
-    <span><strong>CloudCommerce</strong><small>Ecosystem lab</small></span>
+    <span><strong>CloudCommerce</strong><small>Developer ecosystem lab</small></span>
 </a>
 <nav class="demo-nav" aria-label="Demo navigation">
-    <span class="demo-nav-label">Explore</span>
+    <span class="demo-nav-label">Experience</span>
     <NavLink href="/" Match="NavLinkMatch.All"><span aria-hidden="true">⌂</span><span>Overview</span></NavLink>
-    <NavLink href="storefront"><span aria-hidden="true">◇</span><span>Storefront</span><em>Live</em></NavLink>
-    <NavLink href="payments"><span aria-hidden="true">▣</span><span>Payments</span><em>7</em></NavLink>
+    <NavLink href="storefront"><span aria-hidden="true">◇</span><span>Storefront journey</span><em>Live</em></NavLink>
+    <span class="demo-nav-label">Real integration labs</span>
+    <NavLink href="payments" Match="NavLinkMatch.All"><span aria-hidden="true">▣</span><span>Payment providers</span><em>@PaymentProviderLabCatalog.All.Count</em></NavLink>
+    <div class="demo-nav-sublinks">
+        @foreach (PaymentProviderLabDefinition provider in PaymentProviderLabCatalog.All)
+        {
+            <NavLink href="@($"payments/{provider.Slug}")"><i></i><span>@provider.DisplayName</span></NavLink>
+        }
+    </div>
     <NavLink href="logistics"><span aria-hidden="true">⇢</span><span>Logistics</span><em>3</em></NavLink>
     <NavLink href="booking"><span aria-hidden="true">◷</span><span>Booking</span></NavLink>
-    <span class="demo-nav-label">Build</span>
-    <NavLink href="components"><span aria-hidden="true">⌘</span><span>Components</span></NavLink>
+    <span class="demo-nav-label">Public UI reference</span>
+    <NavLink href="components"><span aria-hidden="true">⌘</span><span>Components</span><em>12</em></NavLink>
     <NavLink href="architecture"><span aria-hidden="true">⌁</span><span>Architecture</span></NavLink>
 </nav>
-<div class="demo-sidebar-card"><span class="demo-eyebrow">Headless by default</span><strong>Bring your own domain models.</strong><p>Compose only the services and UI layers your app actually needs.</p><a href="architecture">See the boundaries →</a></div>
+<div class="demo-sidebar-card"><span class="demo-eyebrow">Clear boundaries</span><strong>Package UI and demo UI are labeled.</strong><p>Open a component reference to see exactly what ships in NuGet.</p><a href="components">Browse public components →</a></div>

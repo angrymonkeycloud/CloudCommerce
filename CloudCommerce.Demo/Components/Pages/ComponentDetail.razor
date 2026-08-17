@@ -1,0 +1,108 @@
+@page "/components/{ComponentSlug}"
+
+@if (Definition is null)
+{
+    <PageTitle>Component not found</PageTitle>
+    <DemoPageHeader Eyebrow="CloudCommerce.Components" Title="That component does not exist." Description="Return to the public component catalog." />
+    <a class="demo-button demo-button--primary" href="/components">View components</a>
+}
+else
+{
+    <PageTitle>@Definition.Title component reference</PageTitle>
+    <nav class="demo-breadcrumb" aria-label="Breadcrumb"><a href="/components">Components</a><span>/</span><strong>@Definition.Tag</strong></nav>
+    <DemoPageHeader Eyebrow="@($"Package component · {Definition.Category}")" Title="@($"<{Definition.Tag} />")" Description="@Definition.Description">
+        <span class="demo-package-label">SHIPPED IN NUGET</span>
+    </DemoPageHeader>
+
+    <div class="demo-component-identity">
+        <div><span>Package</span><strong>@ComponentReferenceCatalog.PackageName</strong></div>
+        <div><span>Namespace</span><strong>@ComponentReferenceCatalog.Namespace</strong></div>
+        <div><span>Source</span><a href="@SourceUrl" target="_blank" rel="noreferrer">@(Definition.Tag + ".razor") ↗</a></div>
+        <div><span>Demo wrapper</span><strong>None required</strong></div>
+    </div>
+
+    <section class="demo-component-reference-layout">
+        <main>
+            <header class="demo-reference-label is-package"><span>PACKAGE COMPONENT · LIVE PREVIEW</span><p>The bordered region below renders the actual Razor Class Library component.</p></header>
+            <div class="demo-component-live-stage">
+                @switch (Definition.Slug)
+                {
+                    case "product-card": <ProductCard Product="DemoCatalog.Products[0]" OnAdd="Added" /> break;
+                    case "product-information": <ProductInformation Product="DemoCatalog.Products[1]" OnAdd="Added" /> break;
+                    case "cart-view": <CartView Cart="Cart" OnRemove="Removed" /> break;
+                    case "coupon-input": <CouponInput OnApply="CouponApplied" /> break;
+                    case "payment-selector": <PaymentSelector Options="DemoCatalog.CheckoutPaymentOptions.Take(4).ToArray()" SelectedProvider="_payment" OnSelected="PaymentSelected" /> break;
+                    case "shipping-selector": <ShippingSelector Options="ShippingOptions" Selected="_shipping" OnSelected="ShippingSelected" /> break;
+                    case "booking-selector": <BookingSelector Slots="Slots" Selected="_slot" OnSelected="SlotSelected" TimeZoneLabel="UTC" /> break;
+                    case "shipment-tracker": <ShipmentTracker Shipment="Shipment" Events="TrackingEvents" /> break;
+                    case "checkout-progress": <CheckoutProgress Steps="CheckoutSteps" /> break;
+                    case "order-summary": <OrderSummary Totals="Totals" /> break;
+                    case "search-filter": <SearchFilter Query="_query" QueryChanged="QueryChanged" /> break;
+                    case "provider-card": <ProviderCard Model="Provider" ActionHref="/payments/stripe" ActionLabel="Open Stripe sandbox lab" /> break;
+                }
+            </div>
+            <div class="demo-reference-label is-demo"><span>DEMO-ONLY EVENT INSPECTOR</span><p>This inspector proves emitted callbacks; it is not part of the package.</p></div>
+            <div class="demo-interaction-console" aria-live="polite"><span>Last interaction</span><strong>@(_interaction ?? "Interact with the component above")</strong></div>
+        </main>
+        <aside>
+            <section><span class="demo-package-label">PUBLIC API</span><h2>Parameters</h2><ul>@foreach (string parameter in Definition.Parameters) { <li><code>@parameter</code></li> }</ul></section>
+            <section><h2>Events</h2>@if (Definition.Events.Count == 0) { <p>Presentation-only component.</p> } else { <ul>@foreach (string callback in Definition.Events) { <li><code>@callback</code></li> }</ul> }</section>
+            <section><h2>Install</h2><pre><code>dotnet add package @ComponentReferenceCatalog.PackageName</code></pre></section>
+        </aside>
+    </section>
+
+    <DemoExample Title="Use it in your application" Kind="Copyable package integration" Description="This snippet renders the real component shown above." Code="@IntegrationCode" FileName="@ExampleFile"><div class="demo-code-summary"><span>Razor tag</span><strong>&lt;@Definition.Tag /&gt;</strong><p>No CloudCommerce.Demo dependency is required.</p></div></DemoExample>
+
+    <nav class="demo-lab-pagination"><a href="@PreviousUrl">← @Previous.Tag</a><a href="/components">All components</a><a href="@NextUrl">@Next.Tag →</a></nav>
+}
+
+@code {
+    [Parameter] public string? ComponentSlug { get; set; }
+    private ComponentReferenceDefinition? Definition { get; set; }
+    private string? _interaction;
+    private string _payment = "MyFatoorah";
+    private string? _query;
+    private ShippingSelection _shipping = ShippingOptions[0];
+    private TimeSlot? _slot = Slots[0];
+    private int CurrentIndex => Definition is null ? 0 : ComponentReferenceCatalog.IndexOf(Definition);
+    private ComponentReferenceDefinition Previous => ComponentReferenceCatalog.All[(CurrentIndex - 1 + ComponentReferenceCatalog.All.Count) % ComponentReferenceCatalog.All.Count];
+    private ComponentReferenceDefinition Next => ComponentReferenceCatalog.All[(CurrentIndex + 1) % ComponentReferenceCatalog.All.Count];
+    private string PreviousUrl => $"/components/{Previous.Slug}";
+    private string NextUrl => $"/components/{Next.Slug}";
+    private string SourceUrl => Definition is null ? string.Empty : ComponentReferenceCatalog.SourceUrl(Definition);
+    private string ExampleFile => Definition?.Category is "Checkout" or "Cart" ? "Checkout.razor" : "Example.razor";
+    private string IntegrationCode => Definition?.Slug switch
+    {
+        "product-card" => DemoCodeSamples.ProductCard,
+        "product-information" => "<ProductInformation Product=\"product\" OnAdd=\"AddToCartAsync\" />",
+        "cart-view" => "<CartView Cart=\"cart\" OnRemove=\"RemoveItemAsync\" />",
+        "coupon-input" => "<CouponInput OnApply=\"ApplyCouponAsync\" />",
+        "payment-selector" => DemoCodeSamples.PaymentSelector,
+        "shipping-selector" => "<ShippingSelector Options=\"shippingOptions\" Selected=\"selectedShipping\" OnSelected=\"SelectShipping\" />",
+        "booking-selector" => DemoCodeSamples.BookingSelector,
+        "shipment-tracker" => DemoCodeSamples.ShipmentTracker,
+        "checkout-progress" => "<CheckoutProgress Steps=\"checkoutSteps\" />",
+        "order-summary" => "<OrderSummary Totals=\"totals\" />",
+        "search-filter" => "<SearchFilter Query=\"query\" QueryChanged=\"SearchAsync\" />",
+        "provider-card" => "<ProviderCard Model=\"provider\" ActionHref=\"/payments/stripe\" ActionLabel=\"Open sandbox lab\" />",
+        _ => string.Empty
+    };
+
+    private static Cart Cart => new() { Currency = "USD", Items = [new() { Product = DemoCatalog.Products[0], Quantity = 2 }, new() { Product = DemoCatalog.Products[2] }] };
+    private static CommerceTotals Totals => new() { Items = new("USD", 130m), Discount = new("USD", 20m), Shipping = new("USD", 14.80m), Tax = new("USD", 12.48m), Final = new("USD", 137.28m), Adjustments = [new("MONKEY20", "Launch discount", new("USD", 20m))] };
+    private static IReadOnlyList<ShippingSelection> ShippingOptions => [new("Aramex", "priority", new("USD", 14.80m), DemoCatalog.WarehouseId), new("DHL Express", "express", new("USD", 22.40m), DemoCatalog.WarehouseId)];
+    private static IReadOnlyList<TimeSlot> Slots => Enumerable.Range(0, 6).Select(index => { DateTimeOffset start = DateTimeOffset.UtcNow.Date.AddDays(1 + index / 2).AddHours(10 + index % 2 * 2); return new TimeSlot(DemoCatalog.ResourceId, start, start.AddHours(1), 2); }).ToArray();
+    private static Shipment Shipment => new(Guid.Parse("64b84f36-468e-499b-874a-3ca259665333"), "Aramex", "priority", ShipmentStatuses.InTransit, "AMC-DOH-240816");
+    private static IReadOnlyList<ShipmentTrackingEvent> TrackingEvents => [new("Prepared", "Inventory reserved and label generated.", DateTimeOffset.Now.AddHours(-5), true), new("In carrier network", "Accepted at the origin facility.", DateTimeOffset.Now.AddHours(-2), true, true), new("Out for delivery", "Courier receives the final-mile handoff.")];
+    private static IReadOnlyList<CheckoutStepModel> CheckoutSteps => [new("Cart", "Review items", true), new("Delivery", "Choose carrier", false, true), new("Payment", "Complete securely")];
+    private static ProviderCardModel Provider => DemoCatalog.PaymentProviders[0] with { IsConfigured = false };
+
+    protected override void OnParametersSet() { Definition = ComponentReferenceCatalog.Find(ComponentSlug); _interaction = null; }
+    private void Added(ProductPresentation product) => _interaction = $"OnAdd emitted ProductPresentation: {product.Id}";
+    private void Removed(Guid id) => _interaction = $"OnRemove emitted CartItem ID: {id:N}";
+    private void CouponApplied(string code) => _interaction = $"OnApply emitted coupon: {code}";
+    private void PaymentSelected(string provider) { _payment = provider; _interaction = $"OnSelected emitted provider: {provider}"; }
+    private void ShippingSelected(ShippingSelection shipping) { _shipping = shipping; _interaction = $"OnSelected emitted shipping service: {shipping.Provider}/{shipping.ServiceCode}"; }
+    private void SlotSelected(TimeSlot slot) { _slot = slot; _interaction = $"OnSelected emitted slot: {slot.StartsAt:O}"; }
+    private void QueryChanged(string? query) { _query = query; _interaction = $"QueryChanged emitted: {query}"; }
+}

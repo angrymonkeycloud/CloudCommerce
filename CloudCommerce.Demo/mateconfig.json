@@ -1,9 +1,22 @@
 {
+  "builds": [
+    {
+      "name": "dev",
+      "js": {
+        "minify": false,
+        "sourceMap": false,
+        "declaration": false
+      }
+    }
+  ],
   "files": [
     {
       "input": "src/css/demo.less",
-      "output": "wwwroot/css/demo.css",
-      "minify": false
+      "output": "wwwroot/css/demo.css"
+    },
+    {
+      "input": [ "src/js/demo.js" ],
+      "output": "wwwroot/js/demo.js"
     }
   ]
 }

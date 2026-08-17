@@ -1,0 +1,65 @@
+@inject IJSRuntime JS
+
+<section class="demo-example">
+    <header class="demo-example-header">
+        <div class="demo-example-copy">
+            <div class="demo-artifact-labels"><span class="demo-harness-label">DEMO-ONLY DOCUMENTATION HARNESS</span>@if (!string.IsNullOrWhiteSpace(ComponentName)) { <span class="demo-package-label">PACKAGE COMPONENT</span> }</div>
+            <span class="demo-example-kind">@Kind</span>
+            <div class="demo-example-title-row">
+                <h2>@Title</h2>
+                @if (!string.IsNullOrWhiteSpace(ComponentName))
+                {
+                    <code>&lt;@ComponentName /&gt;</code>
+                }
+            </div>
+            <p>@Description</p>
+        </div>
+        <div class="demo-example-tabs" role="tablist" aria-label="@Title view">
+            <button type="button" role="tab" aria-selected="@(!_showCode)" class="@(!_showCode ? "active" : null)" @onclick="ShowPreview">Preview</button>
+            <button type="button" role="tab" aria-selected="@_showCode" class="@(_showCode ? "active" : null)" @onclick="ShowCode">Code</button>
+        </div>
+    </header>
+
+    @if (_showCode)
+    {
+        <div class="demo-example-code" role="tabpanel">
+            <header><span>@FileName</span><button type="button" @onclick="CopyAsync">@(_copied ? "Copied" : "Copy code")</button></header>
+            <pre><code>@Code</code></pre>
+        </div>
+    }
+    else
+    {
+        <div class="demo-example-preview" role="tabpanel">@ChildContent</div>
+    }
+</section>
+
+@code {
+    private bool _showCode;
+    private bool _copied;
+
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string Kind { get; set; } = "Interactive integration example";
+    [Parameter] public string? ComponentName { get; set; }
+    [Parameter, EditorRequired] public required string Description { get; set; }
+    [Parameter, EditorRequired] public required string Code { get; set; }
+    [Parameter] public string FileName { get; set; } = "Example.razor";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private void ShowPreview()
+    {
+        _showCode = false;
+        _copied = false;
+    }
+
+    private void ShowCode()
+    {
+        _showCode = true;
+        _copied = false;
+    }
+
+    private async Task CopyAsync()
+    {
+        await JS.InvokeVoidAsync("cloudCommerceDemo.copyText", Code);
+        _copied = true;
+    }
+}

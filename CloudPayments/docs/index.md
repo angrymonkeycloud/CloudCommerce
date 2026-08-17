@@ -25,4 +25,4 @@ Provider packages follow the `CloudPayments.ProviderName` boundary and implement
 
 Unit tests use fake providers and the in-memory stores. Provider adapter tests should independently validate request mapping, error normalization, idempotency forwarding, signature verification, and webhook parsing without loading CloudCommerce.
 
-See the [ecosystem architecture](../../docs/commerce-ecosystem/index.md) and [CloudCommerce orchestration](../../CloudCommerce/docs/index.md).
+See the [ecosystem architecture](../../README.md) and [CloudCommerce orchestration](../../CloudCommerce/docs/index.md).

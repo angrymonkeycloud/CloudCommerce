@@ -38,4 +38,4 @@ Provider capability flags are deliberate. CloudPayments checks capabilities befo
 
 Core and adapter unit tests use deterministic HTTP handlers and never call a real sandbox. The CloudCommerce demo adds a no-credentials state simulator that presents every provider and links to its official testing material. Supplying local sandbox credentials registers the real adapter alongside the safe demo driver; it does not cause the public demo to transmit card data.
 
-See [CloudPayments](index.md), the [CloudCommerce demo](../../CloudCommerce/docs/demo.md), [shipping carriers](../../CloudLogistics/docs/carriers.md), and the [commerce ecosystem architecture](../../docs/commerce-ecosystem/index.md).
+See [CloudPayments](index.md), the [CloudCommerce demo](../../CloudCommerce/docs/demo.md), [shipping carriers](../../CloudLogistics/docs/carriers.md), and the [commerce ecosystem architecture](../../README.md).

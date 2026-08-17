@@ -1,28 +1,50 @@
 @inherits LayoutComponentBase
+@inject IJSRuntime JS
 
-<div class="demo-app" data-demo-theme="@(_dark ? "dark" : "light")" data-commerce-theme="@(_dark ? "dark" : "light")">
+<div class="demo-app" data-demo-theme="@_theme" data-commerce-theme="@_theme">
     <aside class="demo-sidebar">
         <DemoNav />
         <div class="demo-sidebar-footer">
             <span class="demo-status-dot" aria-hidden="true"></span>
-            <div><strong>All systems ready</strong><small>Safe simulated mode</small></div>
+            <div><strong>Interactive demo ready</strong><small>Safe mode unless sandbox credentials are configured</small></div>
         </div>
     </aside>
     <div class="demo-shell">
         <header class="demo-topbar">
             <div class="demo-mobile-brand"><span>AM</span><strong>CloudCommerce</strong></div>
-            <div class="demo-topbar-context"><span>Angry Monkey Cloud</span><strong>Commerce ecosystem</strong></div>
+            <div class="demo-topbar-context"><span>Developer showcase</span><strong>Reusable components and integration code</strong></div>
             <div class="demo-topbar-actions">
-                <a href="https://github.com/angrymonkeycloud" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
-                <button type="button" class="demo-theme-toggle" @onclick="ToggleTheme" aria-label="Toggle color theme"><span aria-hidden="true">@(_dark ? "☀" : "◐")</span></button>
+                <a href="https://github.com/angrymonkeycloud/CloudCommerce" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+                <button type="button" class="demo-theme-toggle" @onclick="ToggleThemeAsync" aria-label="Use @(IsDark ? "light" : "dark") theme" aria-pressed="@IsDark" title="Use @(IsDark ? "light" : "dark") theme">
+                    <span aria-hidden="true">@(IsDark ? "☀" : "◐")</span>
+                </button>
             </div>
         </header>
         <main class="demo-main">@Body</main>
-        <footer class="demo-footer"><span>Built with independent Angry Monkey Cloud domains.</span><span>Payments · Logistics · Booking · Commerce</span></footer>
+        <footer class="demo-footer"><span>Each preview identifies the reusable package component and shows its integration code.</span><span>Payments · Logistics · Booking · Commerce</span></footer>
     </div>
 </div>
 
 @code {
-    private bool _dark;
-    private void ToggleTheme() => _dark = !_dark;
+    private string _theme = "light";
+    private bool IsDark => _theme == "dark";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        string? storedTheme = await JS.InvokeAsync<string?>("cloudCommerceDemo.getTheme");
+        if (storedTheme is "dark" or "light")
+        {
+            _theme = storedTheme;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleThemeAsync()
+    {
+        _theme = IsDark ? "light" : "dark";
+        await JS.InvokeVoidAsync("cloudCommerceDemo.setTheme", _theme);
+    }
 }

@@ -8,7 +8,7 @@ on:
       - 'CloudLogistics*/**'
       - 'CloudBooking*/**'
       - 'CloudCommerce*/**'
-      - 'docs/commerce-ecosystem/**'
+      - 'README.md'
       - '.github/workflows/commerce.yml'
   pull_request:
     paths:
@@ -16,7 +16,7 @@ on:
       - 'CloudLogistics*/**'
       - 'CloudBooking*/**'
       - 'CloudCommerce*/**'
-      - 'docs/commerce-ecosystem/**'
+      - 'README.md'
       - '.github/workflows/commerce.yml'
 
 permissions:
@@ -51,6 +51,8 @@ jobs:
             project: CloudBooking.Tests/CloudBooking.Tests.csproj
           - domain: commerce
             project: CloudCommerce.Tests/CloudCommerce.Tests.csproj
+          - domain: demo
+            project: CloudCommerce.Demo.Tests/CloudCommerce.Demo.Tests.csproj
 
     steps:
       - name: Check out repository
@@ -102,6 +104,10 @@ jobs:
             CloudPayments.Stripe/CloudPayments.Stripe.csproj
             CloudPayments.PayPal/CloudPayments.PayPal.csproj
             CloudPayments.Adyen/CloudPayments.Adyen.csproj
+            CloudPayments.MyFatoorah/CloudPayments.MyFatoorah.csproj
+            CloudPayments.SkipCash/CloudPayments.SkipCash.csproj
+            CloudPayments.Tap/CloudPayments.Tap.csproj
+            CloudPayments.PayTabs/CloudPayments.PayTabs.csproj
             CloudLogistics/CloudLogistics.csproj
             CloudLogistics.Aramex/CloudLogistics.Aramex.csproj
             CloudLogistics.DhlExpress/CloudLogistics.DhlExpress.csproj
@@ -118,6 +124,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test -f README.md
+          test -f CloudPayments/README.md
+          test -f CloudLogistics/README.md
+          test -f CloudBooking/README.md
+          test -f CloudCommerce/README.md
+          test -f CloudCommerce.Components/README.md
+          test -f CloudCommerce.Demo/README.md
           test -f CloudPayments/docs/index.md
           test -f CloudPayments/docs/providers.md
           test -f CloudLogistics/docs/index.md

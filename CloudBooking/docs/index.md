@@ -20,4 +20,4 @@ CloudBooking remains functional without CloudPayments. Applications that require
 
 CloudBooking does not own products, carts, subscriptions, payment providers, or application-specific service semantics.
 
-See the [ecosystem architecture](../../docs/commerce-ecosystem/index.md), [CloudPayments](../../CloudPayments/docs/index.md), and [CloudCommerce](../../CloudCommerce/docs/index.md).
+See the [ecosystem architecture](../../README.md), [CloudPayments](../../CloudPayments/docs/index.md), and [CloudCommerce](../../CloudCommerce/docs/index.md).

@@ -1,10 +1,10 @@
 @page "/storefront"
-@rendermode InteractiveServer
 @inject ICommerceService Commerce
 @inject IInventoryService Inventory
 @inject IBookingStore BookingStore
 @inject IAvailabilityService Availability
 @inject IBookingService Booking
+@inject IJSRuntime JS
 
 <PageTitle>CloudCommerce storefront journey</PageTitle>
 
@@ -14,6 +14,7 @@
 
 <CheckoutProgress Steps="ProgressSteps" />
 
+<DemoExample Title="Complete storefront workflow" Kind="Application-owned composition" Description="This custom page composes the reusable ProductCard, CartView, CouponInput, ShippingSelector, PaymentSelector, BookingSelector, CheckoutProgress, and OrderSummary components." Code="@DemoCodeSamples.Storefront" FileName="CheckoutService.cs">
 @if (_stage == StorefrontStages.Catalog)
 {
     <section class="demo-storefront-hero"><div><span class="demo-kicker"><i></i> New commerce foundations</span><h2>Tools for teams building<br /><em>thoughtful digital businesses.</em></h2><p>The catalog belongs to this demo application. CloudCommerce only receives lightweight presentations at the workflow boundary.</p><button class="demo-button demo-button--light" type="button" @onclick="ScrollCatalog">Explore the collection ↓</button></div><div class="demo-storefront-art"><span>AM</span><i></i><b>Build only<br />what you need.</b></div></section>
@@ -59,6 +60,8 @@ else if (_order is not null)
     </section>
 }
 
+</DemoExample>
+
 @code {
     private enum StorefrontStages { Catalog, Cart, Checkout, Complete }
     private Cart _cart = default!;
@@ -95,7 +98,7 @@ else if (_order is not null)
         await RefreshTotalsAsync();
     }
 
-    private void ScrollCatalog() { }
+    private Task ScrollCatalog() => JS.InvokeVoidAsync("cloudCommerceDemo.scrollToId", "catalog").AsTask();
     private async Task AddAsync(ProductPresentation product) { _cart = await Commerce.AddItemAsync(_cart.Id, product); await RefreshTotalsAsync(); _message = $"{product.Title} added."; }
     private async Task RemoveAsync(Guid id) { _cart = await Commerce.RemoveItemAsync(_cart.Id, id); await RefreshTotalsAsync(); }
     private async Task ApplyCouponAsync(string code) { _cart = await Commerce.ApplyCouponAsync(_cart.Id, code); await RefreshTotalsAsync(); _message = code.Equals("MONKEY20", StringComparison.OrdinalIgnoreCase) ? "MONKEY20 applied." : $"{code} recorded; no demo offer matched."; }

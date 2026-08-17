@@ -20,4 +20,4 @@ Carrier adapters implement `IShippingProvider`, advertise `ShippingProviderCapab
 
 CloudLogistics does not own carts, product pricing, checkout, payments, or commerce orders. Item references point back to application-owned records.
 
-See the [ecosystem architecture](../../docs/commerce-ecosystem/index.md) and [CloudCommerce orchestration](../../CloudCommerce/docs/index.md).
+See the [ecosystem architecture](../../README.md) and [CloudCommerce orchestration](../../CloudCommerce/docs/index.md).
