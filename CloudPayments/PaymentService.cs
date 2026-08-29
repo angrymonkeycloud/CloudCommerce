@@ -68,11 +68,47 @@ public sealed class PaymentService(IPaymentProviderRegistry providers, IPaymentS
     public Task<PaymentResult> ChargeRecurringAsync(RecurringPaymentRequest request, CancellationToken cancellationToken = default)
         => ExecuteAsync("recurring", request.Provider, request.IdempotencyKey, PaymentProviderCapabilities.RecurringPayments, provider => provider.ChargeRecurringAsync(request, cancellationToken), cancellationToken);
 
+    /// <summary>
+    /// A payment that has finished moving is answered from the store; one still in flight is
+    /// re-read from the provider and the store brought up to date.
+    ///
+    /// The distinction matters for every flow where the customer leaves to pay somewhere else - a
+    /// hosted card form, a bank redirect. What the store holds is whatever the payment looked like
+    /// when it was created, which for those flows is always "not paid yet"; the customer then pays
+    /// out-of-band and the only place that shows is the provider. Answering such a payment from
+    /// the store reports it unpaid forever, however long ago it actually succeeded.
+    /// </summary>
     public async Task<Payment?> GetAsync(string provider, string paymentId, CancellationToken cancellationToken = default)
-        => await store.GetAsync(provider, paymentId, cancellationToken) ?? await providers.Get(provider).GetAsync(paymentId, cancellationToken);
+    {
+        Payment? stored = await store.GetAsync(provider, paymentId, cancellationToken);
+        if (stored is not null && IsSettled(stored.Status))
+            return stored;
+
+        Payment? current = await providers.Get(provider).GetAsync(paymentId, cancellationToken);
+        if (current is null)
+            return stored;
+
+        await store.SaveAsync(current, cancellationToken);
+        return current;
+    }
 
     public async Task<PaymentStatuses?> GetStatusAsync(string provider, string paymentId, CancellationToken cancellationToken = default)
-        => (await store.GetAsync(provider, paymentId, cancellationToken))?.Status ?? await providers.Get(provider).GetStatusAsync(paymentId, cancellationToken);
+    {
+        Payment? stored = await store.GetAsync(provider, paymentId, cancellationToken);
+        if (stored is not null && IsSettled(stored.Status))
+            return stored.Status;
+
+        return await providers.Get(provider).GetStatusAsync(paymentId, cancellationToken) ?? stored?.Status;
+    }
+
+    /// <summary>
+    /// Whether the payment has reached a state the provider will not move it out of on its own.
+    /// Refunded states count as settled deliberately: the stored record of a refund describes the
+    /// refund, which re-reading the original payment would overwrite with less information.
+    /// </summary>
+    private static bool IsSettled(PaymentStatuses status)
+        => status is PaymentStatuses.Captured or PaymentStatuses.Refunded or PaymentStatuses.PartiallyRefunded
+            or PaymentStatuses.Voided or PaymentStatuses.Cancelled or PaymentStatuses.Failed;
 
     public async Task<PaymentProviderEvent> ProcessWebhookAsync(PaymentWebhookRequest request, CancellationToken cancellationToken = default)
     {

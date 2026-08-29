@@ -67,6 +67,27 @@ public class PaymentServiceEdgeCaseTests
         Assert.Equal("provider-payment", payment!.Id);
     }
 
+    /// <summary>
+    /// The hosted-form case: the payment is stored the moment it is created, while it is still
+    /// waiting on the customer, and succeeds later at the provider where nothing tells the store.
+    /// Answering that from the store would report it unpaid for good.
+    /// </summary>
+    [Fact]
+    public async Task GetAsync_rereads_a_payment_that_was_still_in_flight_when_it_was_stored()
+    {
+        RecordingProvider provider = new();
+        InMemoryPaymentStore store = new();
+        await store.SaveAsync(new() { Id = "pi_1", Provider = provider.Name, Amount = new("USD", 25m), Status = PaymentStatuses.RequiresAction });
+        provider.PaymentToReturn = new() { Id = "pi_1", Provider = provider.Name, Amount = new("USD", 25m), Status = PaymentStatuses.Captured, Metadata = { ["linkId"] = "abc" } };
+        PaymentService service = new(new PaymentProviderRegistry([provider]), store, new InMemoryIdempotencyStore(), new CloudPaymentsOptions());
+
+        Payment? payment = await service.GetAsync(provider.Name, "pi_1");
+
+        Assert.Equal(PaymentStatuses.Captured, payment!.Status);
+        Assert.Equal("abc", payment.Metadata["linkId"]);
+        Assert.Equal(PaymentStatuses.Captured, (await store.GetAsync(provider.Name, "pi_1"))!.Status);
+    }
+
     [Fact]
     public async Task CreateAsync_same_key_is_isolated_by_provider()
     {
