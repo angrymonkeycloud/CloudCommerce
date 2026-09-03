@@ -16,7 +16,6 @@
   <ItemGroup>
     <PackageReference Include="AngryMonkey.CloudGeography" Version="2.8.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
-    <PackageReference Include="AngryMonkey.CloudLogin.Contracts" Version="1.6.4" />
     <ProjectReference Include="..\CloudBooking\CloudBooking.csproj" />
     <ProjectReference Include="..\CloudLogistics\CloudLogistics.csproj" />
     <ProjectReference Include="..\CloudPayments\CloudPayments.csproj" />
