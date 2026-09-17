@@ -81,6 +81,26 @@ public class StripePaymentProviderTests
     }
 
     [Fact]
+    public async Task CreateAsync_only_requests_future_use_when_the_customer_opted_in()
+    {
+        StubHttpMessageHandler handler = new((_, _) => StubHttpMessageHandler.Json("""{"id":"pi_saved","object":"payment_intent","amount":1000,"currency":"usd","status":"requires_payment_method","client_secret":"secret_saved","created":1700000000,"customer":"cus_123"}"""));
+        StripePaymentProvider provider = new(new HttpClient(handler) { BaseAddress = new("https://api.test/") }, new StripeOptions { SecretKey = "sk_test" });
+
+        await provider.CreateAsync(new()
+        {
+            Provider = "Stripe",
+            Amount = new Money("USD", 10m),
+            IdempotencyKey = "save-1",
+            CustomerReference = "cus_123",
+            SavePaymentMethod = true
+        });
+
+        string body = await handler.Requests[0].Content!.ReadAsStringAsync();
+        Assert.Contains("setup_future_usage=off_session", body);
+        Assert.Contains("customer=cus_123", body);
+    }
+
+    [Fact]
     public async Task RefundAsync_maps_partial_refund_to_original_payment()
     {
         StubHttpMessageHandler handler = new((_, _) => StubHttpMessageHandler.Json("""{"id":"re_123","object":"refund","amount":500,"currency":"usd","status":"succeeded"}"""));

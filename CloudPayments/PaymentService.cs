@@ -141,6 +141,7 @@ public sealed class PaymentService(IPaymentProviderRegistry providers, IPaymentS
                 Description = request.Description,
                 CustomerReference = request.CustomerReference,
                 PaymentMethod = request.PaymentMethod,
+                SavePaymentMethod = request.SavePaymentMethod,
                 Metadata = request.Metadata
             };
         }

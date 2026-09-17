@@ -88,6 +88,11 @@ public sealed class PaymentRequest
     public string? Description { get; init; }
     public string? CustomerReference { get; init; }
     public PaymentMethodReference? PaymentMethod { get; init; }
+    /// <summary>
+    /// Explicit customer consent to let the provider retain the payment method for later
+    /// off-session charges. False is deliberately the default.
+    /// </summary>
+    public bool SavePaymentMethod { get; init; }
     public PaymentAction? NextAction { get; init; }
     public Dictionary<string, string> Metadata { get; init; } = [];
 }

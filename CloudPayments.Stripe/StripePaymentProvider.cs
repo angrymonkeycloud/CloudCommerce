@@ -198,7 +198,29 @@ public sealed class StripePaymentProvider(HttpClient httpClient, StripeOptions o
         if (offSession)
             intentOptions.OffSession = true;
 
-        return ExecuteAsync(() => Client.V1.PaymentIntents.CreateAsync(intentOptions, RequestFor(request.IdempotencyKey), cancellationToken), MapPayment);
+        if (request.SavePaymentMethod)
+            intentOptions.SetupFutureUsage = "off_session";
+
+        return ExecuteAsync(async () =>
+        {
+            if (request.SavePaymentMethod && string.IsNullOrWhiteSpace(intentOptions.Customer))
+            {
+                request.Metadata.TryGetValue("payerEmail", out string? payerEmail);
+                request.Metadata.TryGetValue("payerName", out string? payerName);
+                Customer customer = await Client.V1.Customers.CreateAsync(
+                    new CustomerCreateOptions
+                    {
+                        Email = payerEmail,
+                        Name = payerName,
+                        Metadata = new Dictionary<string, string>(request.Metadata)
+                    },
+                    RequestFor($"{request.IdempotencyKey}-customer"),
+                    cancellationToken);
+                intentOptions.Customer = customer.Id;
+            }
+
+            return await Client.V1.PaymentIntents.CreateAsync(intentOptions, RequestFor(request.IdempotencyKey), cancellationToken);
+        }, MapPayment);
     }
 
     private Payment MapPayment(PaymentIntent intent)
