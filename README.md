@@ -35,7 +35,7 @@ CloudCommerce is a modular .NET commerce ecosystem. Use CloudPayments, CloudLogi
 - [CloudBooking](CloudBooking/README.md): standalone availability, capacity, reservations, rescheduling, and persistence contracts.
 - [CloudCommerce](CloudCommerce/README.md): headless cart, totals, checkout, order, and cross-domain orchestration.
 - [CloudCommerce Components](CloudCommerce.Components/README.md): replaceable Blazor components and composition slots.
-- [Interactive demo](CloudCommerce.Demo/README.md): runnable previews, working workflows, and copyable code tabs.
+- [Interactive demo](CloudCommerce.Demo/README.md): the unified workshop with View, Code and Instructions tabs, configurable workflows and downloadable source.
 
 ## Run the developer demo
 
@@ -43,7 +43,7 @@ CloudCommerce is a modular .NET commerce ecosystem. Use CloudPayments, CloudLogi
 dotnet run --project CloudCommerce.Demo/CloudCommerce.Demo.csproj
 ```
 
-The storefront works without credentials using a clearly labeled local driver. The payment area provides seven dedicated real sandbox labs: configure provider-issued test credentials with user-secrets, execute the actual adapter, inspect the normalized result, and open the returned provider-hosted checkout. The component catalog provides a separate live route for every shipped Razor component.
+The storefront works without credentials using a clearly labeled local driver. The payment area provides seven dedicated real sandbox labs: configure provider-issued test credentials in the right panel, execute the actual adapter, inspect the normalized result, and open the returned provider-hosted checkout. The component catalog provides a separate live route for every shipped Razor component.
 
 
 ## Build and test

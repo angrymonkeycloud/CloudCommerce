@@ -35,6 +35,6 @@ public static class DemoCatalog
     ];
 
     public static IReadOnlyList<PaymentProviderOption> CheckoutPaymentOptions { get; } = PaymentProviders
-        .Select(provider => new PaymentProviderOption(provider.Name, provider.Name, provider.Region, provider.Region == "MENA" ? "Regional" : null, "Safe simulated journey until credentials are configured", provider.Name == "MyFatoorah", provider.IsConfigured))
+        .Select(provider => new PaymentProviderOption(provider.Name, provider.Name, provider.Region, provider.Region == "MENA" ? "Regional" : null, "Local simulation; use provider labs for sandbox payments", provider.Name == "MyFatoorah", provider.IsConfigured))
         .ToArray();
 }

@@ -1,0 +1,14 @@
+{
+  "name": "cloudcommerce-workshop",
+  "private": true,
+  "scripts": {
+    "build:demo-assets": "node CloudCommerce.Demo/src/js/build-assets.mjs",
+    "test:demo-browser": "node CloudCommerce.Demo.Tests/browser/workshop.mjs"
+  },
+  "devDependencies": {
+    "less": "4.9.1",
+    "less-plugin-clean-css": "1.6.0",
+    "playwright": "1.63.0"
+  },
+  "version": "0.0.0"
+}

@@ -4,25 +4,13 @@ using AngryMonkey.CloudCommerce.Components;
 using AngryMonkey.CloudCommerce.Demo;
 using AngryMonkey.CloudCommerce.Demo.Components;
 using AngryMonkey.CloudLogistics;
-using AngryMonkey.CloudLogistics.Aramex;
-using AngryMonkey.CloudLogistics.DhlExpress;
-using AngryMonkey.CloudLogistics.FedEx;
 using AngryMonkey.CloudPayments;
-using AngryMonkey.CloudPayments.Adyen;
-using AngryMonkey.CloudPayments.MyFatoorah;
-using AngryMonkey.CloudPayments.PayPal;
-using AngryMonkey.CloudPayments.PayTabs;
-using AngryMonkey.CloudPayments.SkipCash;
-using AngryMonkey.CloudPayments.Stripe;
-using AngryMonkey.CloudPayments.Tap;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddCloudPayments();
-builder.Services.AddCloudPaymentProvider<DemoPaymentProvider>();
 builder.Services.AddCloudLogistics();
-builder.Services.AddCloudShippingProvider<DemoShippingProvider>();
 builder.Services.AddCloudBooking();
 builder.Services.AddCloudCommerce();
 builder.Services.AddSingleton<IDiscountProvider, DemoDiscountProvider>();
@@ -31,97 +19,39 @@ builder.Services.AddCloudCommercePayments();
 builder.Services.AddCloudCommerceLogistics();
 builder.Services.AddCloudCommerceBooking();
 builder.Services.AddCloudCommerceComponents();
-builder.Services.AddHttpClient();
-builder.Services.AddScoped<ProviderCredentialStore>();
+builder.Services.AddDemoSessionStores();
+builder.Services.AddHttpClient(nameof(RuntimePaymentProviderFactory))
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
+    .RemoveAllLoggers();
+builder.Services.AddScoped(serviceProvider =>
+{
+    ProviderCredentialStore credentials = new();
+    if (builder.Environment.IsDevelopment())
+        foreach (PaymentProviderLabDefinition definition in PaymentProviderLabCatalog.All)
+            credentials.SeedFrom(builder.Configuration, definition);
+    return credentials;
+});
 builder.Services.AddScoped<RuntimePaymentProviderFactory>();
 builder.Services.AddScoped<SandboxPaymentRunner>();
 
-IConfiguration configuration = builder.Configuration;
-
-if (!string.IsNullOrWhiteSpace(configuration["Stripe:SecretKey"]))
-    builder.Services.AddStripeCloudPayments(options =>
-    {
-        options.SecretKey = configuration["Stripe:SecretKey"]!;
-        options.WebhookSecret = configuration["Stripe:WebhookSecret"] ?? string.Empty;
-    });
-
-if (!string.IsNullOrWhiteSpace(configuration["PayPal:ClientId"]) && !string.IsNullOrWhiteSpace(configuration["PayPal:ClientSecret"]))
-    builder.Services.AddPayPalCloudPayments(options =>
-    {
-        options.ClientId = configuration["PayPal:ClientId"]!;
-        options.ClientSecret = configuration["PayPal:ClientSecret"]!;
-        options.WebhookId = configuration["PayPal:WebhookId"] ?? string.Empty;
-    });
-
-if (!string.IsNullOrWhiteSpace(configuration["Adyen:ApiKey"]) && !string.IsNullOrWhiteSpace(configuration["Adyen:MerchantAccount"]))
-    builder.Services.AddAdyenCloudPayments(options =>
-    {
-        options.ApiKey = configuration["Adyen:ApiKey"]!;
-        options.MerchantAccount = configuration["Adyen:MerchantAccount"]!;
-        options.HmacKey = configuration["Adyen:HmacKey"] ?? string.Empty;
-    });
-
-if (!string.IsNullOrWhiteSpace(configuration["MyFatoorah:ApiToken"]))
-    builder.Services.AddMyFatoorahCloudPayments(options =>
-    {
-        options.ApiToken = configuration["MyFatoorah:ApiToken"]!;
-        options.WebhookSecret = configuration["MyFatoorah:WebhookSecret"] ?? string.Empty;
-        options.PaymentMethodId = configuration.GetValue<int>("MyFatoorah:PaymentMethodId");
-    });
-
-if (!string.IsNullOrWhiteSpace(configuration["SkipCash:ClientId"]) && !string.IsNullOrWhiteSpace(configuration["SkipCash:KeyId"]) && !string.IsNullOrWhiteSpace(configuration["SkipCash:KeySecret"]))
-    builder.Services.AddSkipCashCloudPayments(options =>
-    {
-        options.ClientId = configuration["SkipCash:ClientId"]!;
-        options.KeyId = configuration["SkipCash:KeyId"]!;
-        options.KeySecret = configuration["SkipCash:KeySecret"]!;
-        options.WebhookKey = configuration["SkipCash:WebhookKey"] ?? string.Empty;
-    });
-
-if (!string.IsNullOrWhiteSpace(configuration["Tap:SecretKey"]))
-    builder.Services.AddTapCloudPayments(options =>
-    {
-        options.SecretKey = configuration["Tap:SecretKey"]!;
-        options.MerchantId = configuration["Tap:MerchantId"] ?? string.Empty;
-    });
-
-if (!string.IsNullOrWhiteSpace(configuration["PayTabs:ServerKey"]) && configuration.GetValue<long>("PayTabs:ProfileId") > 0)
-    builder.Services.AddPayTabsCloudPayments(options =>
-    {
-        options.ProfileId = configuration.GetValue<long>("PayTabs:ProfileId");
-        options.ServerKey = configuration["PayTabs:ServerKey"]!;
-    });
-
-if (!string.IsNullOrWhiteSpace(configuration["Aramex:UserName"]))
-    builder.Services.AddAramexCloudLogistics(options =>
-    {
-        options.UserName = configuration["Aramex:UserName"]!;
-        options.Password = configuration["Aramex:Password"]!;
-        options.AccountNumber = configuration["Aramex:AccountNumber"]!;
-        options.AccountPin = configuration["Aramex:AccountPin"]!;
-        options.AccountEntity = configuration["Aramex:AccountEntity"]!;
-        options.AccountCountryCode = configuration["Aramex:AccountCountryCode"]!;
-    });
-
-if (!string.IsNullOrWhiteSpace(configuration["DhlExpress:UserName"]))
-    builder.Services.AddDhlExpressCloudLogistics(options =>
-    {
-        options.UserName = configuration["DhlExpress:UserName"]!;
-        options.Password = configuration["DhlExpress:Password"]!;
-        options.AccountNumber = configuration["DhlExpress:AccountNumber"]!;
-    });
-
-if (!string.IsNullOrWhiteSpace(configuration["FedEx:ClientId"]))
-    builder.Services.AddFedExCloudLogistics(options =>
-    {
-        options.ClientId = configuration["FedEx:ClientId"]!;
-        options.ClientSecret = configuration["FedEx:ClientSecret"]!;
-        options.AccountNumber = configuration["FedEx:AccountNumber"]!;
-    });
-
 WebApplication app = builder.Build();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/error");
+    app.UseHsts();
+}
 app.UseHttpsRedirection();
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    if (!context.Request.Path.StartsWithSegments("/_framework") && !context.Request.Path.StartsWithSegments("/css"))
+        context.Response.Headers.CacheControl = "no-store";
+    await next();
+});
 app.UseAntiforgery();
+app.MapGet("/error", () => Results.Problem("The demo could not complete this request. Reload the workshop to start a new session."));
 app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.Run();

@@ -23,6 +23,12 @@
     }
     else
     {
+        <div class="commerce-booking-dates" role="group" aria-label="Available dates">
+            @foreach (IGrouping<DateOnly, TimeSlot> day in _days)
+            {
+                <button type="button" aria-pressed="@(day.Key == _activeDate ? "true" : "false")" @onclick="() => _activeDate = day.Key">@day.Key.ToString("ddd, dd MMM")</button>
+            }
+        </div>
         <div class="commerce-booking-days">
             @foreach (IGrouping<DateOnly, TimeSlot> day in GroupedSlots)
             {
@@ -38,7 +44,7 @@
                             bool selected = Selected?.ResourceId == slot.ResourceId && Selected.StartsAt == slot.StartsAt;
                             <button type="button"
                                     class="@(selected ? "is-selected" : null)"
-                                    aria-pressed="@selected"
+                                    aria-pressed="@(selected ? "true" : "false")"
                                     @onclick="() => OnSelected.InvokeAsync(slot)">
                                 <span>@slot.StartsAt.ToString("HH:mm")</span>
                                 <small>@slot.RemainingCapacity @(slot.RemainingCapacity == 1 ? "place" : "places")</small>
@@ -60,7 +66,20 @@
     [Parameter] public TimeSlot? Selected { get; set; }
     [Parameter] public EventCallback<TimeSlot> OnSelected { get; set; }
 
-    private IEnumerable<IGrouping<DateOnly, TimeSlot>> GroupedSlots => Slots
-        .OrderBy(slot => slot.StartsAt)
-        .GroupBy(slot => DateOnly.FromDateTime(slot.StartsAt.Date));
+    private IReadOnlyList<IGrouping<DateOnly, TimeSlot>> _days = [];
+    private DateOnly? _activeDate;
+    private DateTimeOffset? _lastSelected;
+    private IEnumerable<IGrouping<DateOnly, TimeSlot>> GroupedSlots => _days.Where(day => day.Key == _activeDate);
+
+    protected override void OnParametersSet()
+    {
+        _days = Slots.OrderBy(slot => slot.StartsAt).GroupBy(slot => DateOnly.FromDateTime(slot.StartsAt.Date)).ToArray();
+        if (Selected?.StartsAt != _lastSelected)
+        {
+            _lastSelected = Selected?.StartsAt;
+            _activeDate = Selected is null ? null : DateOnly.FromDateTime(Selected.StartsAt.Date);
+        }
+        if (!_days.Any(day => day.Key == _activeDate))
+            _activeDate = _days.FirstOrDefault()?.Key;
+    }
 }

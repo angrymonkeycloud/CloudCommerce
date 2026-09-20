@@ -12,9 +12,18 @@
     <span class="demo-cart-pill">@CartQuantity <span>items</span></span>
 </DemoPageHeader>
 
+<SectionContent SectionName="demo-configuration">
+    <fieldset disabled="@(_processing || _stage == StorefrontStages.Complete)">
+        <legend>Checkout features</legend>
+        <label class="demo-toggle"><input type="checkbox" @bind="_deliveryEnabled" @bind:after="RefreshTotalsAsync" /> Delivery and inventory</label>
+        <label class="demo-toggle"><input type="checkbox" @bind="_bookingEnabled" /> Appointment booking</label>
+        <p>Add Architecture Studio to try booking. Turn delivery off for a digital-only checkout.</p>
+    </fieldset>
+    <p>Payment always uses the local Demo driver. Use provider labs for real sandbox requests.</p>
+</SectionContent>
 <CheckoutProgress Steps="ProgressSteps" />
 
-<DemoExample Title="Complete storefront workflow" Kind="Application-owned composition" Description="This custom page composes the reusable ProductCard, CartView, CouponInput, ShippingSelector, PaymentSelector, BookingSelector, CheckoutProgress, and OrderSummary components." Code="@DemoCodeSamples.Storefront" FileName="CheckoutService.cs">
+<DemoExample Title="Complete storefront workflow" Kind="Application-owned composition" Description="This custom page composes the reusable ProductCard, CartView, CouponInput, ShippingSelector, PaymentSelector, BookingSelector, CheckoutProgress, and OrderSummary components.">
 @if (_stage == StorefrontStages.Catalog)
 {
     <section class="demo-storefront-hero"><div><span class="demo-kicker"><i></i> New commerce foundations</span><h2>Tools for teams building<br /><em>thoughtful digital businesses.</em></h2><p>The catalog belongs to this demo application. CloudCommerce only receives lightweight presentations at the workflow boundary.</p><button class="demo-button demo-button--light" type="button" @onclick="ScrollCatalog">Explore the collection ↓</button></div><div class="demo-storefront-art"><span>AM</span><i></i><b>Build only<br />what you need.</b></div></section>
@@ -27,7 +36,7 @@
             }
         </div>
     </section>
-    <div class="demo-sticky-cart" data-visible="@(CartQuantity > 0)"><div><span>@CartQuantity</span><strong>@CartQuantity item@(CartQuantity == 1 ? string.Empty : "s") ready</strong><small>@_totals.Final.Value.ToString("0.00") @_totals.Final.Currency</small></div><button class="demo-button demo-button--primary" type="button" @onclick="() => _stage = StorefrontStages.Cart">Review cart →</button></div>
+    <div class="demo-sticky-cart" data-visible="@(CartQuantity > 0 ? "true" : "false")"><div><span>@CartQuantity</span><strong>@CartQuantity item@(CartQuantity == 1 ? string.Empty : "s") ready</strong><small>@_totals.Final.Value.ToString("0.00") @_totals.Final.Currency</small></div><button class="demo-button demo-button--primary" type="button" @onclick="() => _stage = StorefrontStages.Cart">Review cart →</button></div>
 }
 else if (_stage == StorefrontStages.Cart)
 {
@@ -40,22 +49,25 @@ else if (_stage == StorefrontStages.Checkout)
 {
     <section class="demo-checkout-shell">
         <div class="demo-checkout-main">
+            @if (_deliveryEnabled)
+            {
             <section class="demo-checkout-card"><header><span>1</span><div><h2>Delivery</h2><p>Select a normalized carrier rate supplied by CloudLogistics.</p></div></header><ShippingSelector Options="ShippingOptions" Selected="_shipping" OnSelected="SelectShippingAsync" /></section>
-            @if (_cart.Items.Any(item => item.Product.Id == "architecture-session"))
+            }
+            @if (_bookingEnabled && _cart.Items.Any(item => item.Product.Id == "architecture-session"))
             {
                 <section class="demo-checkout-card"><header><span>2</span><div><h2>Booking</h2><p>Attach a reservation to this order without turning it into a product dependency.</p></div></header><BookingSelector Eyebrow="Optional appointment" Title="Choose your architecture session" TimeZoneLabel="UTC" Slots="_bookingSlots" Selected="_selectedSlot" OnSelected="slot => _selectedSlot = slot" /></section>
             }
-            <section class="demo-checkout-card"><header><span>3</span><div><h2>Payment experience</h2><p>Choose the customer-facing provider. This public demo executes through the local safe driver.</p></div></header><PaymentSelector Options="PaymentOptions" SelectedProvider="_selectedPayment" OnSelected="provider => _selectedPayment = provider" /><DemoCallout Tone="warning" Icon="!" Title="Safe checkout mode">The selected provider is recorded as journey metadata. No regional or global gateway receives a request until you configure its sandbox credentials.</DemoCallout></section>
+            <section class="demo-checkout-card"><header><span>3</span><div><h2>Payment experience</h2><p>Choose the customer-facing provider. This public demo executes through the local safe driver.</p></div></header><PaymentSelector Options="PaymentOptions" SelectedProvider="_selectedPayment" OnSelected="provider => _selectedPayment = provider" /><DemoCallout Tone="warning" Icon="!" Title="Safe checkout mode">The selected provider is recorded as journey metadata. This journey always uses the local driver. Open a dedicated provider lab to send a real sandbox request.</DemoCallout></section>
         </div>
-        <aside class="demo-checkout-aside"><OrderSummary Totals="_totals" /><div class="demo-checkout-assurance"><span>◇</span><div><strong>Composed securely</strong><small>Payment data remains with the gateway.</small></div></div><button class="demo-button demo-button--primary demo-button--wide" type="button" disabled="@_processing" @onclick="CompleteCheckoutAsync">@(_processing ? "Orchestrating…" : $"Pay {_totals.Final.Value:0.00} {_totals.Final.Currency}")</button><button class="demo-text-button" type="button" @onclick="() => _stage = StorefrontStages.Cart">← Back to cart</button><p class="demo-booking-message" role="status">@_message</p></aside>
+        <aside class="demo-checkout-aside"><OrderSummary Totals="_totals" /><div class="demo-checkout-assurance"><span>◇</span><div><strong>Composed securely</strong><small>Payment data remains with the gateway.</small></div></div><button class="demo-button demo-button--primary demo-button--wide" type="button" disabled="@_processing" @onclick="CompleteCheckoutAsync">@(_processing ? "Orchestrating…" : $"Pay {_totals.Final.Value:0.00} {_totals.Final.Currency}")</button><button class="demo-text-button" type="button" @onclick="BackToCartAsync">← Back to cart</button><p class="demo-booking-message" role="status">@_message</p></aside>
     </section>
 }
 else if (_order is not null)
 {
     <section class="demo-success">
         <div class="demo-success-mark"><span>✓</span><i></i></div><span class="demo-eyebrow">Order complete</span><h1>Everything moved as one.</h1><p>CloudCommerce coordinated pricing, inventory, booking, shipping selection, and payment—while every specialized domain stayed independently usable.</p>
-        <div class="demo-success-reference"><span>Order reference</span><strong>@_order.Id.ToString("N")[..12].ToUpperInvariant()</strong><button type="button">Copy</button></div>
-        <div class="demo-success-grid"><article><span>▣</span><div><small>Payment experience</small><strong>@_selectedPayment</strong><p>Executed with safe Demo driver · @_order.PaymentStatus</p></div></article><article><span>⇢</span><div><small>Delivery</small><strong>@_shipping.Provider / @_shipping.ServiceCode</strong><p>@_order.InventoryReservationIds.Count inventory reservation(s)</p></div></article><article><span>◷</span><div><small>Booking</small><strong>@(_reservation is null ? "Not attached" : _reservation.StartsAt.ToString("dd MMM · HH:mm"))</strong><p>@_order.BookingReservationIds.Count reservation(s)</p></div></article></div>
+        <div class="demo-success-reference"><span>Order reference</span><strong>@_order.Id.ToString("N")[..12].ToUpperInvariant()</strong><button type="button" @onclick="CopyOrderAsync">Copy</button><span role="status">@_copyMessage</span></div>
+        <div class="demo-success-grid"><article><span>▣</span><div><small>Payment experience</small><strong>@_selectedPayment</strong><p>Executed with safe Demo driver · @_order.PaymentStatus</p></div></article><article><span>⇢</span><div><small>Delivery</small><strong>@(_deliveryEnabled ? $"{_shipping.Provider} / {_shipping.ServiceCode}" : "Not attached")</strong><p>@_order.InventoryReservationIds.Count inventory reservation(s)</p></div></article><article><span>◷</span><div><small>Booking</small><strong>@(_reservation is null ? "Not attached" : _reservation.StartsAt.ToString("dd MMM · HH:mm"))</strong><p>@_order.BookingReservationIds.Count reservation(s)</p></div></article></div>
         <div class="demo-success-actions"><button class="demo-button demo-button--primary" type="button" @onclick="StartNewAsync">Start another journey</button><a class="demo-button demo-button--ghost" href="architecture">See what just happened</a></div>
     </section>
 }
@@ -74,11 +86,16 @@ else if (_order is not null)
     private Order? _order;
     private string _selectedPayment = "MyFatoorah";
     private bool _processing;
+    private bool _deliveryEnabled = true;
+    private bool _bookingEnabled = true;
+    private string? _copyMessage;
+    private readonly Guid _resourceId = Guid.NewGuid();
+    private readonly Guid _warehouseId = Guid.NewGuid();
     private string _message = "Safe simulation is ready.";
 
     private static CommerceTotals EmptyTotals => new() { Items = new("USD", 0), Discount = new("USD", 0), Shipping = new("USD", 0), Tax = new("USD", 0), Final = new("USD", 0) };
     private int CartQuantity => _cart?.Items.Sum(item => item.Quantity) ?? 0;
-    private IReadOnlyList<ShippingSelection> ShippingOptions => [new("Aramex", "priority", new("USD", 14.80m), DemoCatalog.WarehouseId), new("DHL Express", "express", new("USD", 22.40m), DemoCatalog.WarehouseId), new("FedEx", "international-economy", new("USD", 18.20m), DemoCatalog.WarehouseId)];
+    private IReadOnlyList<ShippingSelection> ShippingOptions => [new("Aramex", "priority", new("USD", 14.80m), _warehouseId), new("DHL Express", "express", new("USD", 22.40m), _warehouseId), new("FedEx", "international-economy", new("USD", 18.20m), _warehouseId)];
     private IReadOnlyList<PaymentProviderOption> PaymentOptions => DemoCatalog.CheckoutPaymentOptions;
     private IReadOnlyList<CheckoutStepModel> ProgressSteps => [new("Discover", "Application catalog", _stage > StorefrontStages.Catalog, _stage == StorefrontStages.Catalog), new("Cart", "Pricing and offers", _stage > StorefrontStages.Cart, _stage == StorefrontStages.Cart), new("Checkout", "Delivery and payment", _stage > StorefrontStages.Checkout, _stage == StorefrontStages.Checkout), new("Complete", "Composed order", _stage == StorefrontStages.Complete, _stage == StorefrontStages.Complete)];
 
@@ -89,11 +106,11 @@ else if (_order is not null)
         _cart = await Commerce.CreateCartAsync("USD");
         _shipping = ShippingOptions[0];
         foreach (ProductPresentation product in DemoCatalog.Products)
-            await Inventory.SetStockAsync(new(product.Reference ?? product.Id), DemoCatalog.WarehouseId, 25);
-        await BookingStore.SaveResourceAsync(new(DemoCatalog.ResourceId, "Nour Alami", 2, "UTC"));
-        await BookingStore.SaveAvailabilityRulesAsync(DemoCatalog.ResourceId, Enum.GetValues<DayOfWeek>().Select(day => new AvailabilityRule(day, new(9, 0), new(17, 0))).ToArray());
+            await Inventory.SetStockAsync(new(product.Reference ?? product.Id), _warehouseId, 25);
+        await BookingStore.SaveResourceAsync(new(_resourceId, "Nour Alami", 2, "UTC"));
+        await BookingStore.SaveAvailabilityRulesAsync(_resourceId, Enum.GetValues<DayOfWeek>().Select(day => new AvailabilityRule(day, new(9, 0), new(17, 0))).ToArray());
         DateTimeOffset start = new(DateTime.UtcNow.Date.AddDays(1), TimeSpan.Zero);
-        _bookingSlots = await Availability.GetAvailableSlotsAsync(new(DemoCatalog.ResourceId, new("architecture-session", "Architecture Studio", TimeSpan.FromMinutes(60), BufferAfter: TimeSpan.FromMinutes(15)), start, start.AddDays(4), TimeSpan.FromHours(1)));
+        _bookingSlots = await Availability.GetAvailableSlotsAsync(new(_resourceId, new("architecture-session", "Architecture Studio", TimeSpan.FromMinutes(60), BufferAfter: TimeSpan.FromMinutes(15)), start, start.AddDays(4), TimeSpan.FromHours(1)));
         _selectedSlot = _bookingSlots.FirstOrDefault();
         await RefreshTotalsAsync();
     }
@@ -103,23 +120,42 @@ else if (_order is not null)
     private async Task RemoveAsync(Guid id) { _cart = await Commerce.RemoveItemAsync(_cart.Id, id); await RefreshTotalsAsync(); }
     private async Task ApplyCouponAsync(string code) { _cart = await Commerce.ApplyCouponAsync(_cart.Id, code); await RefreshTotalsAsync(); _message = code.Equals("MONKEY20", StringComparison.OrdinalIgnoreCase) ? "MONKEY20 applied." : $"{code} recorded; no demo offer matched."; }
     private Task ApplyDemoCouponAsync() => ApplyCouponAsync("MONKEY20");
-    private void GoToCheckout() => _stage = StorefrontStages.Checkout;
+    private async Task BackToCartAsync() { _stage = StorefrontStages.Cart; await RefreshTotalsAsync(); }
+    private async Task GoToCheckout() { _stage = StorefrontStages.Checkout; await RefreshTotalsAsync(); }
     private async Task SelectShippingAsync(ShippingSelection shipping) { _shipping = shipping; await RefreshTotalsAsync(); }
-    private async Task RefreshTotalsAsync() => _totals = await Commerce.CalculateTotalsAsync(_cart.Id, _stage >= StorefrontStages.Checkout ? _shipping : null);
+    private async Task RefreshTotalsAsync() => _totals = await Commerce.CalculateTotalsAsync(_cart.Id, _deliveryEnabled && _stage >= StorefrontStages.Checkout ? _shipping : null);
 
     private async Task CompleteCheckoutAsync()
     {
+        if (_processing || _cart.Items.Count == 0 || _stage != StorefrontStages.Checkout)
+            return;
         _processing = true;
         try
         {
-            if (_selectedSlot is not null && _cart.Items.Any(item => item.Product.Id == "architecture-session"))
-                _reservation = await Booking.ReserveAsync(new(DemoCatalog.ResourceId, new("architecture-session", "Architecture Studio", TimeSpan.FromMinutes(60), BufferAfter: TimeSpan.FromMinutes(15)), _selectedSlot.StartsAt, CustomerReference: "storefront-guest"));
-            _order = await Commerce.CheckoutAsync(new() { CartId = _cart.Id, IdempotencyKey = $"storefront-{_cart.Id}", PaymentProvider = "Demo", Shipping = _shipping, BookingReservationIds = _reservation is null ? [] : [_reservation.Id], Metadata = new() { ["SelectedPaymentExperience"] = _selectedPayment } });
+            if (_bookingEnabled && _reservation is null && _selectedSlot is not null && _cart.Items.Any(item => item.Product.Id == "architecture-session"))
+                _reservation = await Booking.ReserveAsync(new(_resourceId, new("architecture-session", "Architecture Studio", TimeSpan.FromMinutes(60), BufferAfter: TimeSpan.FromMinutes(15)), _selectedSlot.StartsAt, CustomerReference: "storefront-guest"));
+            _order = await Commerce.CheckoutAsync(new() { CartId = _cart.Id, IdempotencyKey = $"storefront-{_cart.Id}", PaymentProvider = "Demo", Shipping = _deliveryEnabled ? _shipping : null, BookingReservationIds = _reservation is null ? [] : [_reservation.Id], Metadata = new() { ["SelectedPaymentExperience"] = _selectedPayment } });
             _stage = StorefrontStages.Complete;
             _message = "Checkout completed across all selected domains.";
         }
-        catch (Exception exception) { _message = exception.Message; }
+        catch (Exception exception) when (exception is InvalidOperationException or ArgumentException or AggregateException)
+        {
+            if (_reservation is not null)
+            {
+                await Booking.CancelAsync(_reservation.Id);
+                _reservation = null;
+            }
+            _message = "Checkout could not complete. Review the cart and choose an available booking time before retrying.";
+        }
         finally { _processing = false; }
+    }
+
+    private async Task CopyOrderAsync()
+    {
+        if (_order is null)
+            return;
+        try { await JS.InvokeVoidAsync("cloudCommerceDemo.copyText", _order.Id.ToString("N")[..12].ToUpperInvariant()); _copyMessage = "Copied."; }
+        catch (JSException) { _copyMessage = "Select the reference to copy it."; }
     }
 
     private async Task StartNewAsync() { _order = null; _reservation = null; _stage = StorefrontStages.Catalog; await InitializeJourneyAsync(); }

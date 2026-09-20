@@ -1514,3 +1514,22 @@
     small { color: var(--commerce-muted); }
   }
 }
+.commerce-booking-selector {
+  .commerce-booking-dates {
+    display: flex; flex-wrap: wrap; gap: .4rem;
+    button { padding: .55rem .7rem; border: 1px solid var(--commerce-border); border-radius: .5rem; color: var(--commerce-text); background: var(--commerce-surface); font: inherit; font-size: .8rem; cursor: pointer; }
+    button[aria-pressed="true"] { color: var(--commerce-primary); border-color: var(--commerce-primary); background: var(--commerce-primary-soft); }
+  }
+  .commerce-booking-days { grid-template-columns: minmax(0, 1fr); }
+  .commerce-booking-times { grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr)); }
+  .commerce-booking-times button { display: grid; gap: .2rem; }
+}
+
+.commerce-checkout-progress {
+  display: block;
+  > ol { display: grid; grid-template-columns: repeat(var(--commerce-step-count, 4), minmax(0, 1fr)); gap: .5rem; list-style: none; margin: 0; padding: 0; }
+  &-copy { display: grid; gap: .2rem; min-width: 0; overflow-wrap: anywhere; }
+  &-copy small { color: var(--commerce-muted); font-weight: 400; }
+}
+.commerce-payment-selector legend,
+.commerce-shipping-selector legend { display: grid; gap: .3rem; }

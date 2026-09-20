@@ -1,23 +1,34 @@
-<a class="demo-brand" href="/">
-    <span class="demo-brand-mark" aria-hidden="true">AM</span>
-    <span><strong>CloudCommerce</strong><small>Developer ecosystem lab</small></span>
-</a>
-<nav class="demo-nav" aria-label="Demo navigation">
-    <span class="demo-nav-label">Experience</span>
-    <NavLink href="/" Match="NavLinkMatch.All"><span aria-hidden="true">⌂</span><span>Overview</span></NavLink>
-    <NavLink href="storefront"><span aria-hidden="true">◇</span><span>Storefront journey</span><em>Live</em></NavLink>
-    <span class="demo-nav-label">Real integration labs</span>
-    <NavLink href="payments" Match="NavLinkMatch.All"><span aria-hidden="true">▣</span><span>Payment providers</span><em>@PaymentProviderLabCatalog.All.Count</em></NavLink>
+<a class="demo-brand" href="/"><span class="demo-brand-mark" aria-hidden="true">AM</span><span><strong>CloudCommerce</strong><small>Developer workshop</small></span></a>
+<label class="demo-nav-search"><span>Find a demo</span><input type="search" placeholder="Search demos…" @bind="_query" @bind:event="oninput" /></label>
+<nav class="demo-nav" aria-label="Demo navigation" @onclick="() => OnNavigate.InvokeAsync()">
+    <span class="demo-nav-label">Journeys</span>
+    @foreach ((string Path, string Title) journey in Journeys.Where(item => Matches(item.Title)))
+    {
+        <NavLink href="@journey.Path" Match="NavLinkMatch.All"><span>@journey.Title</span></NavLink>
+    }
+    <span class="demo-nav-label">Payment labs</span>
     <div class="demo-nav-sublinks">
-        @foreach (PaymentProviderLabDefinition provider in PaymentProviderLabCatalog.All)
+        @foreach (PaymentProviderLabDefinition provider in PaymentProviderLabCatalog.All.Where(item => Matches(item.DisplayName)))
         {
-            <NavLink href="@($"payments/{provider.Slug}")"><i></i><span>@provider.DisplayName</span></NavLink>
+            <NavLink href="@($"/payments/{provider.Slug}")"><i></i><span>@provider.DisplayName</span></NavLink>
         }
     </div>
-    <NavLink href="logistics"><span aria-hidden="true">⇢</span><span>Logistics</span><em>3</em></NavLink>
-    <NavLink href="booking"><span aria-hidden="true">◷</span><span>Booking</span></NavLink>
-    <span class="demo-nav-label">Public UI reference</span>
-    <NavLink href="components"><span aria-hidden="true">⌘</span><span>Components</span><em>12</em></NavLink>
-    <NavLink href="architecture"><span aria-hidden="true">⌁</span><span>Architecture</span></NavLink>
+    <span class="demo-nav-label">Components · @ComponentReferenceCatalog.All.Count</span>
+    <div class="demo-nav-sublinks">
+        @foreach (ComponentReferenceDefinition component in ComponentReferenceCatalog.All.Where(item => Matches(item.Title + " " + item.Tag)))
+        {
+            <NavLink href="@($"/components/{component.Slug}")"><i></i><span>@component.Title</span></NavLink>
+        }
+    </div>
+    @if (!Journeys.Any(item => Matches(item.Title)) && !PaymentProviderLabCatalog.All.Any(item => Matches(item.DisplayName)) && !ComponentReferenceCatalog.All.Any(item => Matches(item.Title + " " + item.Tag)))
+    {
+        <p role="status">No matching demos.</p>
+    }
 </nav>
-<div class="demo-sidebar-card"><span class="demo-eyebrow">Clear boundaries</span><strong>Package UI and demo UI are labeled.</strong><p>Open a component reference to see exactly what ships in NuGet.</p><a href="components">Browse public components →</a></div>
+
+@code {
+    [Parameter] public EventCallback OnNavigate { get; set; }
+    private string _query = string.Empty;
+    private static readonly (string Path, string Title)[] Journeys = [("/", "Overview"), ("/storefront", "Storefront"), ("/payments", "Payment providers"), ("/booking", "Booking"), ("/logistics", "Logistics"), ("/components", "Component catalog"), ("/architecture", "Architecture")];
+    private bool Matches(string value) => value.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase);
+}

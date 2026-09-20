@@ -84,6 +84,9 @@ services.AddAramexCloudLogistics(options =>
     options.UserName = configuration["Aramex:UserName"]!;
     options.Password = configuration["Aramex:Password"]!;
     options.AccountNumber = configuration["Aramex:AccountNumber"]!;
+    options.AccountPin = configuration["Aramex:AccountPin"]!;
+    options.AccountEntity = configuration["Aramex:AccountEntity"]!;
+    options.AccountCountryCode = configuration["Aramex:AccountCountryCode"]!;
 });
 
 IShippingProvider aramex = providers.Get("Aramex");

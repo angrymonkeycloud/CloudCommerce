@@ -4,10 +4,17 @@
 <PageTitle>CloudLogistics control room</PageTitle>
 
 <DemoPageHeader Eyebrow="CloudLogistics" Title="From available stock to the customer’s door." Description="Compare carrier adapters, choose a rate, and move a normalized shipment through labels, transit, delivery, and tracking states.">
-    <span class="demo-mode-badge"><i></i> Carrier sandbox ready</span>
+    <span class="demo-mode-badge"><i></i> Local carrier simulation</span>
 </DemoPageHeader>
 
-<DemoExample Title="Carrier selection and shipment lifecycle" ComponentName="ShipmentTracker" Description="This page composes reusable ProviderCard, ShippingSelector, and ShipmentTracker components with CloudLogistics carrier abstractions." Code="@DemoCodeSamples.Logistics" FileName="Program.cs">
+<SectionContent SectionName="demo-configuration">
+    <label>Service level<select value="@_selectedRate?.ServiceCode" @onchange="args => SelectRate(Rates.First(rate => rate.ServiceCode == args.Value?.ToString()))">@foreach (ShippingSelection rate in Rates) { <option value="@rate.ServiceCode">@rate.ServiceCode · @rate.Price.Value.ToString("0.00") USD</option> }</select></label>
+    <label class="demo-toggle"><input type="checkbox" @bind="_showEvents" /> Show tracking events</label>
+    <button class="demo-button demo-button--ghost" type="button" @onclick="() => SelectProvider(_selectedProvider)">Reset shipment</button>
+    <p>Local simulation with fixed rates. No carrier requests or label purchases occur.</p>
+</SectionContent>
+
+<DemoExample Title="Carrier selection and shipment lifecycle" ComponentName="ShipmentTracker" Description="This page composes reusable ProviderCard, ShippingSelector, and ShipmentTracker components with CloudLogistics carrier abstractions.">
 <section class="demo-provider-grid demo-provider-grid--three">
     @foreach (ProviderCardModel provider in Providers)
     {
@@ -27,7 +34,7 @@
         </div>
     </div>
     <div class="demo-control-aside">
-        <ShipmentTracker Shipment="_shipment" Events="TrackingEvents" Title="@ShipmentTitle" />
+        <ShipmentTracker Shipment="_shipment" Events="@(_showEvents ? TrackingEvents : [])" Title="@ShipmentTitle" />
         <button class="demo-button demo-button--primary demo-button--wide" type="button" @onclick="AdvanceShipment">@ShipmentAction <span>→</span></button>
         <small class="demo-simulator-note">Progress is simulated locally. Provider adapters keep carrier payloads outside the CloudLogistics core.</small>
     </div>
@@ -46,6 +53,7 @@
 
 @code {
     private IReadOnlyList<ProviderCardModel> Providers = [];
+    private bool _showEvents = true;
     private ProviderCardModel _selectedProvider = DemoCatalog.ShippingProviders[0];
     private ShippingSelection? _selectedRate;
     private Shipment _shipment = new(Guid.NewGuid(), "Aramex", "priority", ShipmentStatuses.Pending, "AMC-DOH-240816", new Uri("https://www.aramex.com/track/results"));
@@ -93,7 +101,7 @@
     private void SelectRate(ShippingSelection rate)
     {
         _selectedRate = rate;
-        _shipment = _shipment with { ServiceCode = rate.ServiceCode };
+        _shipment = _shipment with { ServiceCode = rate.ServiceCode, Status = ShipmentStatuses.Pending, DeliveredAt = null };
     }
 
     private void AdvanceShipment()

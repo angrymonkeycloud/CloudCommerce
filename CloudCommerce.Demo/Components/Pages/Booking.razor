@@ -9,11 +9,21 @@
     <span class="demo-mode-badge"><i></i> Real domain workflow</span>
 </DemoPageHeader>
 
-<DemoExample Title="Availability and reservation lifecycle" ComponentName="BookingSelector" Description="BookingSelector is the reusable UI shown inside a real CloudBooking reserve, confirm, reschedule, cancel, and capacity-release workflow." Code="@DemoCodeSamples.Booking" FileName="Booking.razor">
+<SectionContent SectionName="demo-configuration">
+    <fieldset disabled="@(_busy || _reservation?.Status is ReservationStatuses.Pending or ReservationStatuses.Confirmed)">
+        <legend>Availability scenario</legend>
+        <label>Resource capacity<input type="number" min="1" max="10" @bind="_capacity" /></label>
+        <label>Session minutes<select @bind="_duration"><option value="30">30</option><option value="60">60</option><option value="90">90</option></select></label>
+        <label>Buffer after (minutes)<select @bind="_buffer"><option value="0">0</option><option value="15">15</option><option value="30">30</option></select></label>
+        <button class="demo-button demo-button--primary" type="button" @onclick="ApplyScenarioAsync">Apply scenario</button>
+    </fieldset>
+    <p>Cancel an active reservation before changing availability. All times are UTC.</p>
+</SectionContent>
+<DemoExample Title="Availability and reservation lifecycle" ComponentName="BookingSelector" Description="BookingSelector is the reusable UI shown inside a real CloudBooking reserve, confirm, reschedule, cancel, and capacity-release workflow.">
 <div class="demo-booking-studio">
     <section class="demo-practitioner-card">
         <div class="demo-practitioner-portrait"><span>NA</span><i></i></div>
-        <div><span class="demo-eyebrow">Architecture specialist</span><h2>Nour Alami</h2><p>Commerce systems · MENA launch strategy</p><ul><li>60 min session</li><li>2-person capacity</li><li>UTC timezone</li></ul></div>
+        <div><span class="demo-eyebrow">Architecture specialist</span><h2>Nour Alami</h2><p>Commerce systems · MENA launch strategy</p><ul><li>@_duration min session</li><li>@_capacity-person capacity</li><li>UTC timezone</li></ul></div>
         <span class="demo-rating">★ 4.9 <small>128 sessions</small></span>
     </section>
 
@@ -23,34 +33,34 @@
     }
     else
     {
-        <BookingSelector Eyebrow="Live availability" Title="Choose your studio time" Description="Slots account for duration, capacity, reservations, and a 15-minute after-session buffer." TimeZoneLabel="UTC" Slots="_slots" Selected="_selectedSlot" OnSelected="SelectSlot" />
+        <BookingSelector Eyebrow="Live availability" Title="Choose your studio time" Description="@($"Slots account for duration, capacity, reservations, and a {_buffer}-minute after-session buffer.")" TimeZoneLabel="UTC" Slots="_slots" Selected="_selectedSlot" OnSelected="SelectSlot" />
     }
 
-    <aside class="demo-booking-summary">
+    <aside class="demo-booking-summary"><fieldset class="demo-action-group" disabled="@_busy">
         <header><span class="demo-eyebrow">Reservation</span><h2>Your session</h2></header>
         <div class="demo-booking-summary-date"><span>◷</span><div><strong>@SelectedDate</strong><small>@SelectedTime</small></div></div>
-        <dl><div><dt>Service</dt><dd>Architecture Studio</dd></div><div><dt>Duration</dt><dd>60 minutes</dd></div><div><dt>Capacity</dt><dd>1 of 2</dd></div><div><dt>Status</dt><dd><span class="demo-reservation-status demo-reservation-status--@StatusTone">@StatusLabel</span></dd></div></dl>
+        <dl><div><dt>Service</dt><dd>Architecture Studio</dd></div><div><dt>Duration</dt><dd>@_duration minutes</dd></div><div><dt>Capacity</dt><dd>1 of @_capacity</dd></div><div><dt>Status</dt><dd><span class="demo-reservation-status demo-reservation-status--@StatusTone">@StatusLabel</span></dd></div></dl>
         @if (_reservation is null)
         {
-            <button class="demo-button demo-button--primary demo-button--wide" type="button" disabled="@(_selectedSlot is null)" @onclick="ReserveAsync">Reserve this time</button>
+            <button class="demo-button demo-button--primary demo-button--wide" type="button" disabled="@(_selectedSlot is null)" @onclick="() => RunAsync(ReserveAsync)">Reserve this time</button>
         }
         else if (_reservation.Status == ReservationStatuses.Pending)
         {
-            <button class="demo-button demo-button--primary demo-button--wide" type="button" @onclick="ConfirmAsync">Confirm reservation</button>
-            <button class="demo-button demo-button--ghost demo-button--wide" type="button" disabled="@(_selectedSlot?.StartsAt == _reservation.StartsAt)" @onclick="RescheduleAsync">Reschedule to selected slot</button>
-            <button class="demo-text-button" type="button" @onclick="CancelAsync">Cancel reservation</button>
+            <button class="demo-button demo-button--primary demo-button--wide" type="button" @onclick="() => RunAsync(ConfirmAsync)">Confirm reservation</button>
+            <button class="demo-button demo-button--ghost demo-button--wide" type="button" disabled="@(_selectedSlot?.StartsAt == _reservation.StartsAt)" @onclick="() => RunAsync(RescheduleAsync)">Reschedule to selected slot</button>
+            <button class="demo-text-button" type="button" @onclick="() => RunAsync(CancelAsync)">Cancel reservation</button>
         }
         else if (_reservation.Status == ReservationStatuses.Confirmed)
         {
-            <button class="demo-button demo-button--ghost demo-button--wide" type="button" disabled="@(_selectedSlot?.StartsAt == _reservation.StartsAt)" @onclick="RescheduleAsync">Reschedule to selected slot</button>
-            <button class="demo-text-button" type="button" @onclick="CancelAsync">Cancel reservation</button>
+            <button class="demo-button demo-button--ghost demo-button--wide" type="button" disabled="@(_selectedSlot?.StartsAt == _reservation.StartsAt)" @onclick="() => RunAsync(RescheduleAsync)">Reschedule to selected slot</button>
+            <button class="demo-text-button" type="button" @onclick="() => RunAsync(CancelAsync)">Cancel reservation</button>
         }
         else
         {
             <button class="demo-button demo-button--primary demo-button--wide" type="button" @onclick="StartAgain">Book another session</button>
         }
         <p class="demo-booking-message" role="status">@_message</p>
-    </aside>
+    </fieldset></aside>
 </div>
 
 <section class="demo-section demo-booking-boundaries">
@@ -61,7 +71,12 @@
 </DemoExample>
 
 @code {
-    private static readonly BookingServiceReference Service = new("architecture-session", "Architecture Studio", TimeSpan.FromMinutes(60), BufferAfter: TimeSpan.FromMinutes(15));
+    private int _capacity = 2;
+    private int _duration = 60;
+    private int _buffer = 15;
+    private bool _busy;
+    private readonly Guid _resourceId = Guid.NewGuid();
+    private BookingServiceReference Service => new("architecture-session", "Architecture Studio", TimeSpan.FromMinutes(_duration), BufferAfter: TimeSpan.FromMinutes(_buffer));
     private IReadOnlyList<TimeSlot> _slots = [];
     private TimeSlot? _selectedSlot;
     private Reservation? _reservation;
@@ -73,11 +88,16 @@
     private string StatusLabel => _reservation?.Status.ToString() ?? "Not reserved";
     private string StatusTone => _reservation?.Status.ToString().ToLowerInvariant() ?? "empty";
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync() => ApplyScenarioAsync();
+
+    private async Task ApplyScenarioAsync()
     {
-        await BookingStore.SaveResourceAsync(new(DemoCatalog.ResourceId, "Nour Alami", 2, "UTC"));
+        _capacity = Math.Clamp(_capacity, 1, 10);
+        _reservation = null;
+        _selectedSlot = null;
+        await BookingStore.SaveResourceAsync(new(_resourceId, "Nour Alami", _capacity, "UTC"));
         AvailabilityRule[] rules = Enum.GetValues<DayOfWeek>().Select(day => new AvailabilityRule(day, new TimeOnly(9, 0), new TimeOnly(17, 0))).ToArray();
-        await BookingStore.SaveAvailabilityRulesAsync(DemoCatalog.ResourceId, rules);
+        await BookingStore.SaveAvailabilityRulesAsync(_resourceId, rules);
         await RefreshSlotsAsync();
         _loading = false;
     }
@@ -85,8 +105,8 @@
     private async Task RefreshSlotsAsync()
     {
         DateTimeOffset start = new(DateTime.UtcNow.Date.AddDays(1), TimeSpan.Zero);
-        _slots = await Availability.GetAvailableSlotsAsync(new(DemoCatalog.ResourceId, Service, start, start.AddDays(5), TimeSpan.FromHours(1)));
-        _selectedSlot ??= _slots.FirstOrDefault();
+        _slots = await Availability.GetAvailableSlotsAsync(new(_resourceId, Service, start, start.AddDays(5), TimeSpan.FromHours(1)));
+        _selectedSlot = _slots.FirstOrDefault(slot => slot.StartsAt == _selectedSlot?.StartsAt) ?? _slots.FirstOrDefault();
     }
 
     private void SelectSlot(TimeSlot slot)
@@ -99,7 +119,7 @@
     {
         if (_selectedSlot is null)
             return;
-        _reservation = await BookingService.ReserveAsync(new(DemoCatalog.ResourceId, Service, _selectedSlot.StartsAt, CustomerReference: "demo-guest"));
+        _reservation = await BookingService.ReserveAsync(new(_resourceId, Service, _selectedSlot.StartsAt, CustomerReference: "demo-guest"));
         _message = "Capacity reserved. You can now confirm, reschedule, or cancel.";
         await RefreshSlotsAsync();
     }
@@ -124,6 +144,20 @@
         _reservation = await BookingService.CancelAsync(_reservation!.Id);
         _message = "Reservation cancelled and capacity returned.";
         await RefreshSlotsAsync();
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        if (_busy)
+            return;
+        _busy = true;
+        try { await action(); }
+        catch (Exception exception) when (exception is InvalidOperationException or ArgumentException)
+        {
+            _message = "That action could not complete. Refresh availability and choose an available time.";
+            await RefreshSlotsAsync();
+        }
+        finally { _busy = false; }
     }
 
     private void StartAgain()

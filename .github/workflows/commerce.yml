@@ -9,6 +9,8 @@ on:
       - 'CloudBooking*/**'
       - 'CloudCommerce*/**'
       - 'README.md'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/commerce.yml'
   pull_request:
     paths:
@@ -17,6 +19,8 @@ on:
       - 'CloudBooking*/**'
       - 'CloudCommerce*/**'
       - 'README.md'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/commerce.yml'
 
 permissions:
@@ -149,3 +153,41 @@ jobs:
         with:
           name: commerce-packages
           path: artifacts
+
+  workshop:
+    name: Publish and exercise developer workshop
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install and audit asset dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm audit --audit-level=high
+      - name: Verify generated assets
+        run: |
+          npm run build:demo-assets
+          git diff --exit-code -- CloudCommerce.Demo/wwwroot CloudCommerce.Components/wwwroot
+      - name: Publish workshop
+        run: dotnet publish CloudCommerce.Demo --configuration Release --output artifacts/demo-host
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Exercise all workshop routes and workflows
+        run: npm run test:demo-browser
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workshop-browser
+          path: artifacts/workshop
+          if-no-files-found: warn

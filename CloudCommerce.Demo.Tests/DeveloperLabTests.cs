@@ -28,8 +28,8 @@ public class DeveloperLabCatalogTests
     [Fact]
     public void Component_catalog_identifies_every_item_as_a_real_package_component()
     {
-        Assert.Equal(12, ComponentReferenceCatalog.All.Count);
-        Assert.Equal(12, ComponentReferenceCatalog.All.Select(item => item.Slug).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Equal(15, ComponentReferenceCatalog.All.Count);
+        Assert.Equal(15, ComponentReferenceCatalog.All.Select(item => item.Slug).Distinct(StringComparer.OrdinalIgnoreCase).Count());
         Assert.All(ComponentReferenceCatalog.All, definition =>
         {
             Assert.NotEmpty(definition.Tag);
@@ -59,7 +59,7 @@ public class SandboxPaymentRunnerTests
         StubRegistry registry = new(provider);
         RuntimePaymentProviderFactory factory = new(new StubHttpClientFactory(), registry, new ProviderCredentialStore());
         SandboxPaymentRunner runner = new(factory);
-        
+
         PaymentProviderLabDefinition definition = PaymentProviderLabCatalog.Find("skipcash")!;
 
         SandboxPaymentRun run = await runner.CreateAsync(definition, 10m, "qar");

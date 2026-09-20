@@ -1,0 +1,137 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<section class="demo-workspace">
+    <header class="demo-workspace-toolbar">
+        <div><span class="demo-eyebrow">Developer workshop</span><strong>@Guide.Title</strong></div>
+        <div class="demo-workspace-tabs" role="tablist" aria-label="Demo workspace" @onkeydown="HandleKey">
+            @foreach (string tab in Tabs)
+            {
+                <button id="@($"workshop-tab-{tab}")" type="button" role="tab" aria-selected="@(_tab == tab ? "true" : "false")" aria-controls="@($"workshop-panel-{tab}")" tabindex="@(_tab == tab ? 0 : -1)" @onclick="() => SelectTab(tab)">@TabLabel(tab)</button>
+            }
+        </div>
+        @if (Guide.HasConfiguration)
+        {
+            <button type="button" class="demo-button demo-button--ghost" aria-expanded="@(_configurationOpen ? "true" : "false")" aria-controls="workshop-configuration" @onclick="() => _configurationOpen = !_configurationOpen">Configuration</button>
+        }
+    </header>
+    <div class="demo-workspace-layout @(Guide.HasConfiguration && _configurationOpen ? "_configured" : null)">
+        <div class="demo-workspace-content">
+            <section id="workshop-panel-view" role="tabpanel" aria-labelledby="workshop-tab-view" tabindex="0" hidden="@(_tab != "view")">@ChildContent</section>
+            <section id="workshop-panel-code" role="tabpanel" aria-labelledby="workshop-tab-code" tabindex="0" hidden="@(_tab != "code")">
+                @if (_tab == "code")
+                {
+                    <header class="demo-workspace-intro"><h1>@Guide.Title code</h1><p>Copy an integration example or inspect the complete source that runs this demo. Source files come from this build; session data and credentials are never included.</p></header>
+                    <div class="demo-source-toolbar">
+                        <label>Source file <select value="@_fileIndex" @onchange="SelectFile">@for (int i = 0; i < Guide.Files.Count; i++) { <option value="@i">@Guide.Files[i].Name</option> }</select></label>
+                        <button class="demo-button demo-button--primary" type="button" @onclick="CopyAsync">Copy code</button>
+                        <button class="demo-button demo-button--ghost" type="button" @onclick="DownloadAsync">Download file</button>
+                    </div>
+                    <p class="demo-source-note">@CurrentFile.Description</p>
+                    <p role="status" aria-live="polite">@_copyStatus</p>
+                    <pre class="demo-source" tabindex="0" aria-label="@CurrentFile.Name"><code>@CurrentFile.Content</code></pre>
+                }
+            </section>
+            <section id="workshop-panel-instructions" role="tabpanel" aria-labelledby="workshop-tab-instructions" tabindex="0" hidden="@(_tab != "instructions")">
+                @if (_tab == "instructions")
+                {
+                    <article class="demo-instructions">
+                        <span class="demo-eyebrow">Start here</span><h1>@Guide.Title instructions</h1><p>@Guide.Summary</p>
+                        <h2>Set up</h2><p>@Guide.Setup</p>
+                        <ol>@foreach (DemoInstruction step in Guide.Steps) { <li><h3>@step.Title</h3><p>@step.Description</p></li> }</ol>
+                        <h2>What to expect</h2><p>@Guide.Expected</p>
+                        <h2>Troubleshooting and boundaries</h2><p>@Guide.Troubleshooting</p>
+                        @if (Guide.Component is { } component)
+                        {
+                            <h2>Parameters and callbacks</h2>
+                            <p>Namespace: <code>@ComponentReferenceCatalog.Namespace</code></p>
+                            <div class="demo-api-list"><section><h3>Parameters</h3><ul>@foreach (string parameter in component.Parameters) { <li><code>@parameter</code></li> }</ul></section><section><h3>Callbacks</h3><ul>@foreach (string callback in component.Events) { <li><code>@callback</code></li> }</ul>@if (component.Events.Count == 0) { <p>This component displays data without emitting a callback.</p> }</section></div>
+                            <p>The Code tab includes the complete component implementation, parameter types and defaults, plus the working demo page and fixtures.</p>
+                        }
+                        @if (Guide.Provider is { } provider)
+                        {
+                            <h2>Provider setup</h2>
+                            <p>@provider.CustomerExperience</p>
+                            @if (provider.RequiresCredentials)
+                            {
+                                <ul>@foreach (ProviderCredentialField field in provider.Credentials) { <li><code>@field.Key</code> — @field.Label (@field.Hint)</li> }</ul>
+                                <p><a href="@provider.PortalUrl" target="_blank" rel="noopener noreferrer">Get sandbox credentials</a> · <a href="@provider.TestingUrl" target="_blank" rel="noopener noreferrer">Official test data</a> · <a href="@provider.DocumentationUrl" target="_blank" rel="noopener noreferrer">Provider documentation</a></p>
+                            }
+                        }
+                        <h2>Continue the workshop</h2><div class="demo-instructions-links"><a href="/storefront">Storefront</a><a href="/payments/sandbox">Payment lifecycle</a><a href="/booking">Booking</a><a href="/logistics">Logistics</a><a href="/components">All components</a><a href="/architecture">Architecture</a></div>
+                    </article>
+                }
+            </section>
+        </div>
+        @if (Guide.HasConfiguration)
+        {
+            <aside id="workshop-configuration" class="demo-workspace-configuration" hidden="@(!_configurationOpen)" aria-label="Demo configuration">
+                <header><span class="demo-eyebrow">Make it yours</span><h2>Configuration</h2><p>Changes apply to this session. Switch tabs without losing your work.</p></header>
+                <SectionOutlet SectionName="demo-configuration" />
+            </aside>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private static readonly string[] Tabs = ["view", "code", "instructions"];
+    private DemoGuide Guide { get; set; } = DemoWorkshopCatalog.Find("/");
+    private string _tab = "view";
+    private string _path = string.Empty;
+    private int _fileIndex;
+    private bool _configurationOpen = true;
+    private string? _copyStatus;
+    private DemoSourceFile CurrentFile => Guide.Files[_fileIndex];
+
+    protected override void OnInitialized()
+    {
+        UpdateLocation();
+        Navigation.LocationChanged += LocationChanged;
+    }
+
+    private void UpdateLocation()
+    {
+        Uri uri = new(Navigation.Uri);
+        if (_path != uri.AbsolutePath)
+        {
+            _path = uri.AbsolutePath;
+            Guide = DemoWorkshopCatalog.Find(_path);
+            _fileIndex = 0;
+            _copyStatus = null;
+            _configurationOpen = true;
+        }
+        string? requested = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).GetValueOrDefault("tab").FirstOrDefault();
+        _tab = Tabs.Contains(requested) ? requested! : "view";
+    }
+
+    private void LocationChanged(object? sender, LocationChangedEventArgs args) => _ = InvokeAsync(() => { UpdateLocation(); StateHasChanged(); });
+    private void SelectTab(string tab) => Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("tab", tab == "view" ? null : tab), replace: true);
+    private static string TabLabel(string tab) => char.ToUpperInvariant(tab[0]) + tab[1..];
+    private void SelectFile(ChangeEventArgs args) { if (int.TryParse(args.Value?.ToString(), out int index) && index >= 0 && index < Guide.Files.Count) _fileIndex = index; _copyStatus = null; }
+
+    private async Task HandleKey(KeyboardEventArgs args)
+    {
+        int index = Array.IndexOf(Tabs, _tab);
+        string? next = args.Key switch { "ArrowRight" => Tabs[(index + 1) % Tabs.Length], "ArrowLeft" => Tabs[(index + Tabs.Length - 1) % Tabs.Length], "Home" => Tabs[0], "End" => Tabs[^1], _ => null };
+        if (next is null)
+            return;
+        SelectTab(next);
+        await JS.InvokeVoidAsync("cloudCommerceDemo.focus", $"workshop-tab-{next}");
+    }
+
+    private async Task CopyAsync()
+    {
+        try { await JS.InvokeVoidAsync("cloudCommerceDemo.copyText", CurrentFile.Content); _copyStatus = "Code copied."; }
+        catch (JSException) { _copyStatus = "Clipboard unavailable. Select the code below or download the file."; }
+    }
+
+    private async Task DownloadAsync()
+    {
+        try { await JS.InvokeVoidAsync("cloudCommerceDemo.download", CurrentFile.Name, CurrentFile.Content); _copyStatus = "File downloaded."; }
+        catch (JSException) { _copyStatus = "Download unavailable. Select and copy the code below."; }
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= LocationChanged;
+}

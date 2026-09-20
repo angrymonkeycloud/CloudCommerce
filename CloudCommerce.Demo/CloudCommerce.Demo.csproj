@@ -21,4 +21,11 @@
     <ProjectReference Include="..\CloudLogistics.DhlExpress\CloudLogistics.DhlExpress.csproj" />
     <ProjectReference Include="..\CloudLogistics.FedEx\CloudLogistics.FedEx.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Components/Pages/*.razor;Components/_Imports.razor;DemoCatalog.cs;DemoProviders.cs;DemoSessionServices.cs;Program.cs;SandboxPaymentRunner.cs;ProviderCredentials.cs" LogicalName="Workshop.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../CloudCommerce.Components/Components/*.razor" LogicalName="Workshop.%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Update="mateconfig.json" CopyToPublishDirectory="Never" CopyToOutputDirectory="Never" />
+  </ItemGroup>
 </Project>

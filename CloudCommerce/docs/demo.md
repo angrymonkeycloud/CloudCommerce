@@ -1,39 +1,15 @@
-# Explore the CloudCommerce ecosystem demo
+# CloudCommerce developer workshop
 
-CloudCommerce Demo is a multi-page Blazor application that demonstrates application-owned catalog data, cart and pricing composition, provider-neutral payments, inventory and shipping, standalone booking, replaceable UI, and final order orchestration in one host.
+The runnable [CloudCommerce demo](../../CloudCommerce.Demo/README.md) is the maintained home for workshops, instructions and experimentation.
 
-## Start the demo
+Run the demo from the repository root:
 
-```powershell
+~~~powershell
 dotnet run --project CloudCommerce.Demo
-```
+~~~
 
-The default configuration uses deterministic in-memory payment, shipping, inventory, booking, cart, order, discount, and tax implementations. No database, cloud account, or external provider credential is required.
+Open the local address printed by the application. Every route has View, Code and Instructions tabs. The left navigation reaches every journey, payment provider and shipped component; the configuration panel changes the current scenario.
 
-## Demo pages
+Follow the in-app Instructions tab for storefront checkout, booking lifecycle, local logistics simulation, component usage and provider sandbox setup. Code includes copyable examples and the full source compiled into the running build.
 
-- **Overview** presents the independent domains, reusable foundations, and safe-mode status.
-- **Storefront** runs an end-to-end discover, cart, coupon, shipping, booking, payment-selection, and order journey.
-- **Payments** compares Stripe, PayPal, Adyen, MyFatoorah, SkipCash, Tap Payments, and PayTabs, links to official sandbox/test-card resources, and simulates normalized lifecycle states.
-- **Logistics** compares Aramex, DHL Express, and FedEx, then simulates inventory, rate selection, label creation, transit, final-mile, and delivery tracking.
-- **Booking** uses the real CloudBooking in-memory services to calculate slots, reserve capacity, confirm, reschedule, cancel, and return capacity.
-- **Components** showcases the default responsive components, design tokens, and semantic override slots.
-- **Architecture** documents dependency direction, domain ownership, shared libraries, and the private CDM boundary.
-
-## Enable provider sandboxes
-
-Use .NET user secrets or environment variables for Stripe, PayPal, Adyen, MyFatoorah, SkipCash, Tap, PayTabs, Aramex, DHL Express, and FedEx configuration. When a provider’s minimum configuration exists, the demo registers its adapter alongside the safe local drivers.
-
-The public demo does not send the interactive simulator or storefront transaction to those adapters. Production applications must use provider-hosted fields or client SDKs for sensitive payment details and pass only provider references or tokens to CloudPayments.
-
-## Styling and customization
-
-Demo styles are authored in `CloudCommerce.Demo/src/css/demo.less` and generated with CloudMate. Reusable package styles are authored in `CloudCommerce.Components/src/css/cloud-commerce.less`. Do not hand-edit generated CSS.
-
-The component gallery demonstrates semantic slots for product, cart, checkout, payment, shipping, booking, tracking, provider cards, pages, and storefront composition. Replacing a Razor component does not replace the underlying commerce service.
-
-## Booking persistence boundary
-
-The demo intentionally does not add Azure Table Storage. CloudBooking remains database agnostic through `IBookingStore`; applications may supply a private CDM, Cosmos, SQL, or other adapter independently.
-
-See [CloudCommerce](index.md), [UI customization](ui.md), [payment providers](../../CloudPayments/docs/providers.md), [shipping carriers](../../CloudLogistics/docs/carriers.md), and [booking](../../CloudBooking/docs/index.md).
+See the [demo README](../../CloudCommerce.Demo/README.md) for host setup, safety boundaries and verification commands. Package documentation remains available for [commerce](index.md), [UI customization](ui.md), [payments](../../CloudPayments/docs/providers.md), [logistics](../../CloudLogistics/docs/carriers.md) and [booking](../../CloudBooking/docs/index.md).

@@ -1,13 +1,13 @@
 @namespace AngryMonkey.CloudCommerce.Components.Components
 
 <nav class="commerce-checkout-progress" aria-label="Checkout progress">
-    <ol>
+    <ol style="@($"--commerce-step-count:{Math.Max(1, Steps.Count)}")">
         @for (int index = 0; index < Steps.Count; index++)
         {
             CheckoutStepModel step = Steps[index];
-            <li class="@(step.IsComplete ? "is-complete" : null) @(step.IsCurrent ? "is-current" : null)" aria-current="@(step.IsCurrent ? "step" : null)">
-                <span class="commerce-checkout-progress-index" aria-hidden="true">@(step.IsComplete ? "✓" : (index + 1).ToString())</span>
-                <span>
+            <li data-state="@(step.IsComplete ? "complete" : step.IsCurrent ? "current" : "pending")" class="commerce-checkout-progress-step @(step.IsComplete ? "is-complete" : null) @(step.IsCurrent ? "is-current" : null)" aria-current="@(step.IsCurrent ? "step" : null)">
+                <span class="commerce-checkout-progress-index commerce-checkout-progress-marker" aria-hidden="true">@(step.IsComplete ? "✓" : (index + 1).ToString())</span>
+                <span class="commerce-checkout-progress-copy">
                     <strong>@step.Label</strong>
                     <small>@step.Description</small>
                 </span>

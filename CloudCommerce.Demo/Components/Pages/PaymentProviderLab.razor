@@ -1,7 +1,7 @@
 @page "/payments/{ProviderSlug}"
 @inject SandboxPaymentRunner Runner
 @inject ProviderCredentialStore Credentials
-@inject IConfiguration Configuration
+
 
 @if (Definition is null)
 {
@@ -17,15 +17,14 @@ else
         <span class="demo-live-status @(IsReady ? "is-ready" : null)"><i></i>@StatusLabel</span>
     </DemoPageHeader>
 
-    <ol class="demo-steps">
-        @* ---------- Step 1: credentials, entered right here ---------- *@
-        <li class="demo-step @(IsReady ? "is-done" : "is-active")">
+<SectionContent SectionName="demo-configuration">
+        <fieldset disabled="@(_running || _refreshing)">
             <div class="demo-step-head">
                 <span class="demo-step-number">1</span>
                 <div>
                     <h2>@(Definition.RequiresCredentials ? "Add your test keys" : "No keys needed")</h2>
                     <p>@(Definition.RequiresCredentials
-                        ? "Paste sandbox credentials below and connect. They apply immediately — no restart, no user-secrets."
+                        ? "Paste sandbox credentials below and connect. They apply immediately — no restart needed."
                         : "This adapter runs in memory. Skip straight to the payment step below.")</p>
                 </div>
                 @if (Definition.RequiresCredentials)
@@ -58,7 +57,7 @@ else
                                    spellcheck="false"
                                    placeholder="@(HasStored(field) ? "Saved — type to replace" : field.Placeholder)"
                                    value="@_draft.GetValueOrDefault(field.Key, string.Empty)"
-                                   @onchange="@(args => _draft[field.Key] = args.Value?.ToString() ?? string.Empty)" />
+                                   @oninput="@(args => _draft[field.Key] = args.Value?.ToString() ?? string.Empty)" />
                             <small><code>@field.Key</code></small>
                         </label>
                     }
@@ -74,10 +73,17 @@ else
                     @if (_keyMessage is not null) { <span class="demo-key-message">@_keyMessage</span> }
                 </div>
 
-                <p class="demo-key-note"><b>Kept in this browser session only.</b> Keys stay in server memory for your session, are never written to disk or logs, and are cleared when you close the tab. Use sandbox credentials only — never live keys. To keep them permanently, put them in user-secrets instead: <code>dotnet user-secrets set "@Definition.Credentials[0].Key" "…" --project CloudCommerce.Demo</code></p>
+                <p class="demo-key-note"><b>Kept in this browser session only.</b> Keys stay in server memory for your session, are never written to disk or logs, and expire with the server circuit after its reconnect window. Use sandbox credentials only — never live keys. To keep them permanently, put them in user-secrets instead: <code>dotnet user-secrets set "@Definition.Credentials[0].Key" "…" --project CloudCommerce.Demo</code></p>
             }
-        </li>
+        </fieldset>
 
+<fieldset disabled="@(_running || _refreshing)"><legend>Payment request</legend>                <div class="demo-pay-amount">
+                    <label><span>Amount</span><input type="number" min="0.01" step="0.01" @bind="_amount" /></label>
+                    <label><span>Currency</span><input maxlength="3" @bind="_currency" disabled="@(Definition.ProviderName == "SkipCash")" /></label>
+                </div>
+
+@if (!Definition.RequiresCredentials) { <label class="demo-toggle"><input type="checkbox" @bind="_authorize" /> Authorize before capture</label> }</fieldset></SectionContent>
+    <ol class="demo-steps">
         @* ---------- Step 2: the reusable component + pay button ---------- *@
         <li class="demo-step @(IsReady ? "is-active" : "is-locked")">
             <div class="demo-step-head">
@@ -90,11 +96,6 @@ else
             </div>
 
             <div class="demo-pay">
-                <div class="demo-pay-amount">
-                    <label><span>Amount</span><input type="number" min="0.01" step="0.01" @bind="_amount" /></label>
-                    <label><span>Currency</span><input maxlength="3" @bind="_currency" disabled="@(Definition.ProviderName == "SkipCash")" /></label>
-                </div>
-
                 <PaymentSelector Title="Payment method"
                                  Description="Your application decides which providers appear here."
                                  Options="PaymentOptions"
@@ -106,7 +107,7 @@ else
 
                 @if (!IsReady)
                 {
-                    <p class="demo-disabled-reason">Connect your keys in step 1 to enable this button.</p>
+                    <p class="demo-disabled-reason">Connect test keys in Configuration to enable this button.</p>
                 }
                 else if (Definition.RequiresCredentials)
                 {
@@ -131,7 +132,7 @@ else
                             <div><dt>Amount</dt><dd>@payment.Amount.Value.ToString("0.00") @payment.Amount.Currency</dd></div>
                             <div><dt>Next action</dt><dd>@(payment.NextAction?.Type.ToString() ?? "None")</dd></div>
                         </dl>
-                        @if (payment.NextAction?.Url is { } checkoutUrl)
+                        @if (payment.NextAction?.Url is { IsAbsoluteUri: true, Scheme: "https" } checkoutUrl)
                         {
                             <a class="demo-button demo-button--primary demo-button--wide" href="@checkoutUrl" target="_blank" rel="noreferrer">Continue to @Definition.DisplayName checkout ↗</a>
                         }
@@ -139,8 +140,23 @@ else
                         {
                             <DemoCallout Tone="success" Icon="✓" Title="Client action returned">The provider returned client-side action data. Pass it to the official provider JavaScript SDK; it is deliberately not printed here.</DemoCallout>
                         }
-                        <button class="demo-button demo-button--ghost demo-button--wide" type="button" disabled="@_refreshing" @onclick="RefreshStatusAsync">@(_refreshing ? "Querying provider…" : "Refresh status from provider")</button>
+                        <button class="demo-button demo-button--ghost demo-button--wide" type="button" disabled="@(_refreshing || _running)" @onclick="RefreshStatusAsync">@(_refreshing ? "Querying provider…" : "Refresh status from provider")</button>
                         @if (_refreshedStatus is not null) { <p class="demo-refreshed-status">Provider status: <strong>@_refreshedStatus</strong></p> }
+                        <p role="status">@_statusMessage</p>
+                        @if (!Definition.RequiresCredentials)
+                        {
+                            <div class="demo-lifecycle-actions">
+                                @if (payment.Status == PaymentStatuses.Authorized)
+                                {
+                                    <button class="demo-button demo-button--primary" disabled="@(_running || _refreshing)" @onclick='() => ChangePaymentAsync("capture")'>Capture</button>
+                                    <button class="demo-button demo-button--ghost" disabled="@(_running || _refreshing)" @onclick='() => ChangePaymentAsync("void")'>Void</button>
+                                }
+                                @if (payment.Status == PaymentStatuses.Captured)
+                                {
+                                    <button class="demo-button demo-button--ghost" disabled="@(_running || _refreshing)" @onclick='() => ChangePaymentAsync("refund")'>Refund payment</button>
+                                }
+                            </div>
+                        }
                     }
                     else
                     {
@@ -152,20 +168,15 @@ else
 
     </ol>
 
-    <section class="demo-section">
-        <DemoPageHeader Eyebrow="Production integration" Title="The same call, in your application." Description="Nothing above is demo-only plumbing: these are the two pieces of code you actually ship." />
-        <div class="demo-lab-code-grid">
-            <DemoExample Title="Register the adapter" Kind="Production integration code" Description="This code belongs in the consuming application's Program.cs." Code="@Definition.RegistrationCode" FileName="Program.cs"><div class="demo-code-summary"><span>Package</span><strong>@Definition.PackageName</strong><p>Registration activates the provider's real HTTP adapter.</p></div></DemoExample>
-            <DemoExample Title="Create a payment" Kind="Production integration code" Description="Call the provider through the stable IPaymentService contract." Code="@Definition.RequestCode" FileName="CheckoutService.cs"><div class="demo-code-summary"><span>Contract</span><strong>IPaymentService.CreateAsync</strong><p>The returned PaymentResult normalizes provider state and errors.</p></div></DemoExample>
-        </div>
-    </section>
-
 }
 
 @code {
     [Parameter] public string? ProviderSlug { get; set; }
     private PaymentProviderLabDefinition? Definition { get; set; }
     private readonly Dictionary<string, string> _draft = [];
+    private string? _loadedSlug;
+    private bool _authorize;
+    private string? _statusMessage;
     private decimal _amount;
     private string _currency = string.Empty;
     private bool _running;
@@ -186,16 +197,18 @@ else
     private string ResultTitle => _run?.Result?.Payment is { } payment ? $"{payment.Status} · {payment.Provider}" : "CloudPayments normalized error";
 
     private IReadOnlyList<PaymentProviderOption> PaymentOptions => Definition is null ? []
-        : [new(Definition.ProviderName, Definition.DisplayName, Definition.Region, Definition.RequiresCredentials ? "Sandbox" : "No keys", IsReady ? "Adapter connected" : "Add keys in step 1", false, IsReady)];
+        : [new(Definition.ProviderName, Definition.DisplayName, Definition.Region, Definition.RequiresCredentials ? "Sandbox" : "No keys", IsReady ? "Adapter connected" : "Add keys in Configuration", false, IsReady)];
 
     protected override void OnParametersSet()
     {
+        if (_loadedSlug == ProviderSlug)
+            return;
+        _loadedSlug = ProviderSlug;
         Definition = PaymentProviderLabCatalog.Find(ProviderSlug);
         if (Definition is null)
             return;
 
-        // Pick up anything already in user-secrets/appsettings so configured machines keep working.
-        Credentials.SeedFrom(Configuration, Definition);
+
 
         _amount = Definition.SuggestedAmount;
         _currency = Definition.Currency;
@@ -213,8 +226,11 @@ else
         foreach (KeyValuePair<string, string> entry in _draft.Where(entry => !string.IsNullOrWhiteSpace(entry.Value)))
             Credentials.Set(entry.Key, entry.Value);
 
+        Credentials.Connect(Definition);
         _draft.Clear();
-        _keyMessage = IsReady ? "Connected." : "Still missing a required key.";
+        _run = null;
+        _refreshedStatus = null;
+        _keyMessage = Runner.ValidationError(Definition) ?? (IsReady ? "Connected." : "Still missing a required key.");
     }
 
     private void ClearKeys()
@@ -223,6 +239,7 @@ else
             return;
 
         Credentials.Clear(Definition);
+        Runner.ResetConnections();
         _draft.Clear();
         _run = null;
         _refreshedStatus = null;
@@ -231,22 +248,50 @@ else
 
     private async Task RunAsync()
     {
-        if (Definition is null || !IsReady)
+        if (Definition is null || !IsReady || _running || _refreshing)
             return;
 
         _running = true;
         _refreshedStatus = null;
-        try { _run = await Runner.CreateAsync(Definition, _amount, _currency); }
+        PaymentProviderLabDefinition definition = Definition;
+        try
+        {
+            SandboxPaymentRun run = await Runner.CreateAsync(definition, _amount, _currency, authorize: !definition.RequiresCredentials && _authorize);
+            if (Definition == definition) _run = run;
+        }
+        finally { _running = false; }
+    }
+
+    private async Task ChangePaymentAsync(string operation)
+    {
+        if (_running || _refreshing || Definition is null || Definition.RequiresCredentials || _run?.Result?.Payment is not { } payment)
+            return;
+        PaymentProviderLabDefinition definition = Definition;
+        _running = true;
+        try
+        {
+            SandboxPaymentRun run = await Runner.ChangeLocalAsync(definition, payment, operation);
+            if (Definition == definition) { _run = run; _refreshedStatus = null; }
+        }
         finally { _running = false; }
     }
 
     private async Task RefreshStatusAsync()
     {
-        if (Definition is null || _run?.Result?.Payment is not { } payment)
+        if (Definition is null || _running || _refreshing || _run?.Result?.Payment is not { } payment)
             return;
 
         _refreshing = true;
-        try { _refreshedStatus = await Runner.GetStatusAsync(Definition, payment.Id); }
+        PaymentProviderLabDefinition definition = Definition;
+        try
+        {
+            PaymentStatuses? status = await Runner.GetStatusAsync(definition, payment.Id);
+            if (Definition == definition)
+            {
+                _refreshedStatus = status;
+                _statusMessage = status is null ? "Status unavailable. Check the connection and retry." : "Status refreshed.";
+            }
+        }
         finally { _refreshing = false; }
     }
 }

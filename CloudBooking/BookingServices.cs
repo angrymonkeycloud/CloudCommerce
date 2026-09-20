@@ -71,14 +71,22 @@ public sealed class AvailabilityService(IBookingStore store) : IAvailabilityServ
             throw new ArgumentException("The availability range end must be after its start.", nameof(request));
 
         TimeSpan interval = request.SlotInterval ?? TimeSpan.FromMinutes(15);
+
+        if (interval <= TimeSpan.Zero || request.Service.Duration <= TimeSpan.Zero || request.Service.CapacityRequired <= 0 || request.Service.BufferBefore < TimeSpan.Zero || request.Service.BufferAfter < TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(request), "Duration, interval and capacity must be positive; buffers cannot be negative.");
+
         List<TimeSlot> slots = [];
         DateTimeOffset candidate = request.RangeStart;
 
         while (candidate + request.Service.Duration <= request.RangeEnd)
         {
             DateTimeOffset endsAt = candidate + request.Service.Duration;
-            int remainingCapacity = await GetRemainingCapacityAsync(request.ResourceId, candidate, endsAt, cancellationToken);
-            if (remainingCapacity >= request.Service.CapacityRequired && await IsInsideScheduleAsync(request.ResourceId, candidate, endsAt, cancellationToken))
+            cancellationToken.ThrowIfCancellationRequested();
+            DateTimeOffset occupancyStart = candidate - (request.Service.BufferBefore ?? TimeSpan.Zero);
+            DateTimeOffset occupancyEnd = endsAt + (request.Service.BufferAfter ?? TimeSpan.Zero);
+            int remainingCapacity = await GetRemainingCapacityAsync(request.ResourceId, occupancyStart, occupancyEnd, cancellationToken);
+
+            if (remainingCapacity >= request.Service.CapacityRequired && await IsInsideScheduleAsync(request.ResourceId, occupancyStart, occupancyEnd, cancellationToken))
                 slots.Add(new(request.ResourceId, candidate, endsAt, remainingCapacity));
 
             candidate += interval;
@@ -111,6 +119,10 @@ public sealed class AvailabilityService(IBookingStore store) : IAvailabilityServ
         TimeZoneInfo? timeZone = string.IsNullOrWhiteSpace(resource.TimeZoneId) ? null : TimeZoneInfo.FindSystemTimeZoneById(resource.TimeZoneId);
         DateTimeOffset localStart = timeZone is null ? startsAt : TimeZoneInfo.ConvertTime(startsAt, timeZone);
         DateTimeOffset localEnd = timeZone is null ? endsAt : TimeZoneInfo.ConvertTime(endsAt, timeZone);
+
+        if (localStart.Date != localEnd.Date)
+            return false;
+
         DateOnly date = DateOnly.FromDateTime(localStart.Date);
         TimeOnly start = TimeOnly.FromDateTime(localStart.DateTime);
         TimeOnly end = TimeOnly.FromDateTime(localEnd.DateTime);
@@ -126,7 +138,7 @@ public sealed class BookingService(IBookingStore store, IAvailabilityService ava
 
     public async Task<Reservation> ReserveAsync(ReservationRequest request, CancellationToken cancellationToken = default)
     {
-        if (request.Capacity <= 0)
+        if (request.Capacity <= 0 || request.Service.Duration <= TimeSpan.Zero || request.Service.BufferBefore < TimeSpan.Zero || request.Service.BufferAfter < TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(request));
 
         DateTimeOffset startsAt = request.StartsAt - (request.Service.BufferBefore ?? TimeSpan.Zero);

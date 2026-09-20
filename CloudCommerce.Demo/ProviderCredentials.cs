@@ -23,12 +23,17 @@ public sealed record ProviderCredentialField(string Key, string Label, string Pl
 public sealed class ProviderCredentialStore
 {
     private readonly Dictionary<string, string> _values = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _disconnected = new(StringComparer.OrdinalIgnoreCase);
+    public int Revision { get; private set; }
+    public bool IsDisconnected(PaymentProviderLabDefinition definition) => _disconnected.Contains(definition.Slug);
+    public void Connect(PaymentProviderLabDefinition definition) { _disconnected.Remove(definition.Slug); Revision++; }
 
     public string Get(string key) => _values.GetValueOrDefault(key, string.Empty);
 
     public void Set(string key, string? value)
     {
         string trimmed = value?.Trim() ?? string.Empty;
+        Revision++;
         if (trimmed.Length == 0)
             _values.Remove(key);
         else
@@ -45,11 +50,15 @@ public sealed class ProviderCredentialStore
     {
         foreach (ProviderCredentialField field in definition.Credentials)
             _values.Remove(field.Key);
+        _disconnected.Add(definition.Slug);
+        Revision++;
     }
 
     /// <summary>Prefills the form from user-secrets/appsettings so an already-configured machine keeps working.</summary>
     public int SeedFrom(IConfiguration configuration, PaymentProviderLabDefinition definition)
     {
+        if (IsDisconnected(definition))
+            return 0;
         int seeded = 0;
         foreach (ProviderCredentialField field in definition.Credentials)
         {
@@ -72,19 +81,56 @@ public sealed class ProviderCredentialStore
 /// Builds a real provider adapter from portal-entered credentials, so a lab can run without
 /// restarting the application. Falls back to whatever was registered at startup.
 /// </summary>
-public sealed class RuntimePaymentProviderFactory(IHttpClientFactory httpClientFactory, IPaymentProviderRegistry registry, ProviderCredentialStore store)
+public sealed class RuntimePaymentProviderFactory(IHttpClientFactory httpClientFactory, IPaymentProviderRegistry registry, ProviderCredentialStore store) : IDisposable
 {
+    private readonly Dictionary<string, IPaymentProvider> _providers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<HttpClient> _clients = [];
+    private int _revision = -1;
+
+    public string? ValidationError(PaymentProviderLabDefinition definition)
+    {
+        if (store.IsDisconnected(definition))
+            return "This provider is disconnected. Add test keys and connect again.";
+        foreach (ProviderCredentialField field in definition.Credentials)
+        {
+            string value = store.Get(field.Key);
+            if (field.IsNumeric && value.Length > 0 && (!long.TryParse(value, out long number) || number < 1 || (field.Key == "MyFatoorah:PaymentMethodId" && number > int.MaxValue)))
+                return $"{field.Label} must be a positive whole number.";
+            if (field.IsSecret && (value.StartsWith("sk_live_", StringComparison.OrdinalIgnoreCase) || value.StartsWith("rk_live_", StringComparison.OrdinalIgnoreCase)))
+                return "Live keys are not accepted. Use provider-issued test credentials.";
+        }
+        if (definition.ProviderName == "Stripe" && store.Get("Stripe:SecretKey") is { Length: > 0 } key && !key.StartsWith("sk_test_", StringComparison.Ordinal) && !key.StartsWith("rk_test_", StringComparison.Ordinal))
+            return "Stripe requires an sk_test_ or rk_test_ key.";
+        return null;
+    }
+
     /// <summary>The adapter to call for this lab, or null when credentials are still missing.</summary>
     public IPaymentProvider? Resolve(PaymentProviderLabDefinition definition)
     {
-        if (!definition.RequiresCredentials)
+        if (!IsReady(definition))
+            return null;
+        if (_revision != store.Revision)
+        {
+            Dispose();
+            _revision = store.Revision;
+        }
+        if (!definition.RequiresCredentials || !store.HasRequired(definition))
             return Registered(definition);
-
-        return store.HasRequired(definition) ? Build(definition) : Registered(definition);
+        if (_providers.TryGetValue(definition.Slug, out IPaymentProvider? cached))
+            return cached;
+        IPaymentProvider? provider = Build(definition);
+        if (provider is not null)
+            _providers[definition.Slug] = provider;
+        return provider;
     }
 
     /// <summary>True when the lab can run right now, from either source.</summary>
-    public bool IsReady(PaymentProviderLabDefinition definition) => Resolve(definition) is not null;
+    public bool IsReady(PaymentProviderLabDefinition definition)
+    {
+        if (ValidationError(definition) is not null)
+            return false;
+        return definition.RequiresCredentials && store.HasRequired(definition) || Registered(definition) is not null;
+    }
 
     /// <summary>True when the running adapter came from credentials typed into the portal.</summary>
     public bool IsUsingPortalCredentials(PaymentProviderLabDefinition definition)
@@ -97,7 +143,17 @@ public sealed class RuntimePaymentProviderFactory(IHttpClientFactory httpClientF
     {
         HttpClient client = httpClientFactory.CreateClient(nameof(RuntimePaymentProviderFactory));
         client.BaseAddress = baseAddress;
+        client.Timeout = TimeSpan.FromSeconds(30);
+        _clients.Add(client);
         return client;
+    }
+
+    public void Dispose()
+    {
+        foreach (HttpClient client in _clients)
+            client.Dispose();
+        _clients.Clear();
+        _providers.Clear();
     }
 
     private IPaymentProvider? Build(PaymentProviderLabDefinition definition)
