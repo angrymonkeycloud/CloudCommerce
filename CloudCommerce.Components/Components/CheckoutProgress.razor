@@ -1,7 +1,7 @@
 @namespace AngryMonkey.CloudCommerce.Components.Components
 
 <nav class="commerce-checkout-progress" aria-label="Checkout progress">
-    <ol style="@($"--commerce-step-count:{Math.Max(1, Steps.Count)}")">
+    <ol style="@($"--cloudcommerce-step-count:{Math.Max(1, Steps.Count)}")">
         @for (int index = 0; index < Steps.Count; index++)
         {
             CheckoutStepModel step = Steps[index];

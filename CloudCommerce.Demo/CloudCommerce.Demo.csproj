@@ -28,4 +28,5 @@
   <ItemGroup>
     <Content Update="mateconfig.json" CopyToPublishDirectory="Never" CopyToOutputDirectory="Never" />
   </ItemGroup>
+  <ItemGroup><ProjectReference Include="../../CloudCommon/CloudCommon.Theming.Blazor/CloudCommon.Theming.Blazor.csproj" /></ItemGroup>
 </Project>

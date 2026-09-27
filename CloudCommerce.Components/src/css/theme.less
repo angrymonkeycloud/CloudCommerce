@@ -1,0 +1,64 @@
+// Project-local CloudTheme contract. Components import this file and use these names.
+@import (reference) "../../../../CloudCommon/CloudCommon.Theming/src/css/library.less";
+
+@commerce-border: var(--cloudcommerce-border, var(--amc-color-border, #c0c0c0));
+@commerce-radius: var(--cloudcommerce-radius, var(--amc-radius-control, .5rem));
+@commerce-surface: var(--cloudcommerce-surface, var(--amc-color-surface, #ffffff));
+@commerce-shadow-sm: var(--cloudcommerce-shadow-sm, var(--amc-shadow, 0 8px 24px #00000012));
+@commerce-muted: var(--cloudcommerce-muted, var(--amc-color-muted, #505050));
+@commerce-surface-subtle: var(--cloudcommerce-surface-subtle, var(--amc-color-surface-subtle, #f1f1f1));
+@commerce-secondary-button-normal-border-radius: var(--cloudcommerce-secondary-button-normal-border-radius, var(--amc-secondary-button-normal-border-radius, .5rem));
+@commerce-secondary-button-normal-color: var(--cloudcommerce-secondary-button-normal-color, var(--amc-secondary-button-normal-color, #ffffff));
+@commerce-secondary-button-normal-background: var(--cloudcommerce-secondary-button-normal-background, var(--amc-secondary-button-normal-background, #525252));
+@commerce-secondary-button-hover-border-color: var(--cloudcommerce-secondary-button-hover-border-color, var(--amc-secondary-button-hover-border-color, #525252));
+@commerce-ink: var(--cloudcommerce-ink, var(--amc-color-text, #111111));
+@commerce-font: var(--cloudcommerce-font, var(--amc-font-family, Inter, 'Segoe UI', system-ui, sans-serif));
+@commerce-primary: var(--cloudcommerce-primary, var(--amc-color-primary, #525252));
+@commerce-ink-soft: var(--cloudcommerce-ink-soft, var(--amc-color-muted, #505050));
+@commerce-button-normal-border-radius: var(--cloudcommerce-button-normal-border-radius, var(--amc-button-normal-border-radius, .5rem));
+@commerce-button-normal-color: var(--cloudcommerce-button-normal-color, var(--amc-button-normal-color, #ffffff));
+@commerce-button-normal-background: var(--cloudcommerce-button-normal-background, var(--amc-button-normal-background, #525252));
+@commerce-button-normal-box-shadow: var(--cloudcommerce-button-normal-box-shadow, var(--amc-button-normal-box-shadow, none));
+@commerce-button-disabled-box-shadow: var(--cloudcommerce-button-disabled-box-shadow, var(--amc-button-disabled-box-shadow, none));
+@commerce-secondary-button-normal-border-color: var(--cloudcommerce-secondary-button-normal-border-color, var(--amc-secondary-button-normal-border-color, #525252));
+@commerce-primary-soft: var(--cloudcommerce-primary-soft, var(--amc-color-primary-soft, #f8f8f8));
+@commerce-radius-lg: var(--cloudcommerce-radius-lg, var(--amc-radius-surface, .75rem));
+@commerce-cloud-commerce-focus: var(--cloudcommerce-cloud-commerce-focus, var(--amc-color-focus, #464646));
+@commerce-shadow-lg: var(--cloudcommerce-shadow-lg, var(--amc-shadow, 0 8px 24px #00000012));
+@commerce-cloud-commerce-muted: var(--cloudcommerce-cloud-commerce-muted, var(--amc-color-muted, #505050));
+@commerce-cloud-commerce-border: var(--cloudcommerce-cloud-commerce-border, var(--amc-color-border, #c0c0c0));
+@commerce-cloud-commerce-radius-control: var(--cloudcommerce-cloud-commerce-radius-control, var(--amc-radius-control, .5rem));
+@commerce-cloud-commerce-surface: var(--cloudcommerce-cloud-commerce-surface, var(--amc-color-surface, #ffffff));
+@commerce-cloud-commerce-shadow: var(--cloudcommerce-cloud-commerce-shadow, var(--amc-shadow, 0 8px 24px #00000012));
+@commerce-cloud-commerce-text: var(--cloudcommerce-cloud-commerce-text, var(--amc-color-text, #111111));
+@commerce-button-hover-background: var(--cloudcommerce-button-hover-background, var(--amc-button-hover-background, #464646));
+@commerce-danger: var(--cloudcommerce-danger, var(--amc-color-danger, #525252));
+@commerce-border-strong: var(--cloudcommerce-border-strong, var(--amc-color-control-border, #737373));
+@commerce-success: var(--cloudcommerce-success, var(--amc-color-success, #525252));
+@commerce-input-normal-border-radius: var(--cloudcommerce-input-normal-border-radius, var(--amc-input-normal-border-radius, .5rem));
+@commerce-input-normal-color: var(--cloudcommerce-input-normal-color, var(--amc-input-normal-color, #111111));
+@commerce-input-normal-background: var(--cloudcommerce-input-normal-background, var(--amc-input-normal-background, #ffffff));
+@commerce-input-focus-border-color: var(--cloudcommerce-input-focus-border-color, var(--amc-input-focus-border-color, #737373));
+@commerce-text: var(--cloudcommerce-text, var(--amc-color-text, #111111));
+@commerce-warning: var(--cloudcommerce-warning, var(--amc-color-warning, #525252));
+@commerce-warning-soft: var(--cloudcommerce-warning-soft, var(--amc-color-warning-soft, #f8f8f8));
+@commerce-step-count: var(--cloudcommerce-step-count, 4);
+@commerce-cloud-commerce-success: var(--cloudcommerce-cloud-commerce-success, var(--amc-color-success, #525252));
+@commerce-button-hover-border-color: var(--cloudcommerce-button-hover-border-color, var(--amc-button-hover-border-color, #525252));
+@commerce-button-hover-color: var(--cloudcommerce-button-hover-color, var(--amc-button-hover-color, #ffffff));
+@commerce-success-soft: var(--cloudcommerce-success-soft, var(--amc-color-success-soft, #f8f8f8));
+@commerce-provider-accent: var(--provider-accent, var(--cloudcommerce-primary, var(--amc-color-primary, #525252)));
+@commerce-shadow-hover: var(--cloudcommerce-shadow-hover, var(--amc-shadow, 0 8px 24px #00000012));
+@commerce-button-active-color: var(--cloudcommerce-button-active-color, var(--amc-button-active-color, #ffffff));
+@commerce-button-active-border-color: var(--cloudcommerce-button-active-border-color, var(--amc-button-active-border-color, #525252));
+@commerce-button-active-background: var(--cloudcommerce-button-active-background, var(--amc-button-active-background, #393939));
+
+.commerce-control(@element) {
+    .amc-control(cloudcommerce; @element);
+}
+
+@commerce-cloudcommerce-primary-strong: var(--cloudcommerce-primary-strong, var(--amc-color-primary-hover, #5430ee));
+@commerce-cloudcommerce-teal: var(--cloudcommerce-teal, var(--amc-color-secondary, #00a884));
+
+@commerce-secondary-action-background: var(--cloudcommerce-secondary-button-normal-background, @commerce-surface);
+@commerce-secondary-action-color: var(--cloudcommerce-secondary-button-normal-color, @commerce-text);

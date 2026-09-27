@@ -54,3 +54,6 @@ dotnet test CloudCommerce.slnx -c Release
 ```
 
 CloudCommerce is part of [Angry Monkey Cloud](https://angrymonkeycloud.com). Development follows the shared [AI instructions](https://github.com/angrymonkeycloud/CloudDocs/blob/main/docs/ai/instructions.md).
+## Shared theme
+
+UI visuals consume CloudCommon --amc-* tokens. Library overrides use --cloudcommerce-*. Load ThemeCss.ExportDocument(theme) or render CloudThemeDocument in the document head; set html data-amc-theme to light, dark or system. Use CloudThemeScope for independent embedded themes. Component class names are unchanged. See [CloudCommon integration](../CloudCommon/docs/migration.md) for the token migration and source build instructions.

@@ -9,6 +9,7 @@
   }
   function applyTheme(theme) {
     document.documentElement.dataset.demoTheme = theme;
+    document.documentElement.dataset.amcTheme = theme;
     try { window.localStorage.setItem(storageKey, theme); } catch {}
   }
   window.cloudCommerceDemo = {
@@ -32,4 +33,5 @@
     scrollToId: id => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })
   };
   document.documentElement.dataset.demoTheme = preferredTheme();
+  document.documentElement.dataset.amcTheme = preferredTheme();
 })();
