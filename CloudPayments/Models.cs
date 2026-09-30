@@ -93,6 +93,11 @@ public sealed class PaymentRequest
     /// off-session charges. False is deliberately the default.
     /// </summary>
     public bool SavePaymentMethod { get; init; }
+    /// <summary>
+    /// Provider-specific method identifiers the customer may pay with (Stripe: "card"), instead of
+    /// everything the account has switched on. Empty leaves the choice to the provider.
+    /// </summary>
+    public IReadOnlyList<string> AllowedMethods { get; init; } = [];
     public PaymentAction? NextAction { get; init; }
     public Dictionary<string, string> Metadata { get; init; } = [];
 }

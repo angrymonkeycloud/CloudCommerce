@@ -101,6 +101,20 @@ public class StripePaymentProviderTests
     }
 
     [Fact]
+    public async Task CreateAsync_limits_the_intent_to_the_requested_methods_and_otherwise_leaves_the_choice_to_stripe()
+    {
+        StubHttpMessageHandler handler = new((_, _) => StubHttpMessageHandler.Json("""{"id":"pi_card","object":"payment_intent","amount":1000,"currency":"usd","status":"requires_payment_method","client_secret":"secret_card","created":1700000000}"""));
+        StripePaymentProvider provider = new(new HttpClient(handler) { BaseAddress = new("https://api.test/") }, new StripeOptions { SecretKey = "sk_test" });
+
+        await provider.CreateAsync(new() { Provider = "Stripe", Amount = new Money("USD", 10m), IdempotencyKey = "card-1", AllowedMethods = ["card"] });
+        await provider.CreateAsync(new() { Provider = "Stripe", Amount = new Money("USD", 10m), IdempotencyKey = "any-1" });
+
+        string limited = Uri.UnescapeDataString(await handler.Requests[0].Content!.ReadAsStringAsync());
+        Assert.Contains("payment_method_types[0]=card", limited);
+        Assert.DoesNotContain("payment_method_types", await handler.Requests[1].Content!.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task RefundAsync_maps_partial_refund_to_original_payment()
     {
         StubHttpMessageHandler handler = new((_, _) => StubHttpMessageHandler.Json("""{"id":"re_123","object":"refund","amount":500,"currency":"usd","status":"succeeded"}"""));

@@ -195,6 +195,11 @@ public sealed class StripePaymentProvider(HttpClient httpClient, StripeOptions o
             intentOptions.Confirm = true;
         }
 
+        // Naming the methods keeps Stripe from adding Link, wallets and the rest of what the account
+        // has switched on - a card form with only the card fields in it.
+        if (request.AllowedMethods.Count > 0)
+            intentOptions.PaymentMethodTypes = [.. request.AllowedMethods];
+
         if (offSession)
             intentOptions.OffSession = true;
 
