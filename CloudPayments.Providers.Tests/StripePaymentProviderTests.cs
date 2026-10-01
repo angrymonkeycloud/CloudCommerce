@@ -142,4 +142,24 @@ public class StripePaymentProviderTests
         Assert.True(valid);
         Assert.False(invalid);
     }
+
+    [Fact]
+    public void The_provider_speaks_the_dahlia_api_version()
+    {
+        Assert.Equal("2026-08-26.dahlia", StripePaymentProvider.ApiVersion);
+    }
+
+    [Theory]
+    [InlineData("2026-08-26.dahlia")]
+    [InlineData("2019-05-16")]
+    public async Task ParseWebhookAsync_reports_the_api_version_the_event_was_sent_in_and_reads_older_ones(string version)
+    {
+        string body = """{"id":"evt_1","object":"event","api_version":"VERSION","created":1700000000,"type":"payment_intent.succeeded","data":{"object":{"id":"pi_1","object":"payment_intent","status":"succeeded","amount":100,"currency":"usd"}}}""".Replace("VERSION", version);
+        StripePaymentProvider provider = new(new HttpClient(new StubHttpMessageHandler((_, _) => StubHttpMessageHandler.Json("{}"))) { BaseAddress = new("https://api.test/") }, new StripeOptions { SecretKey = "sk_test" });
+
+        PaymentProviderEvent providerEvent = await provider.ParseWebhookAsync(new("Stripe", new Dictionary<string, string>(), Encoding.UTF8.GetBytes(body)));
+
+        Assert.Equal("pi_1", providerEvent.PaymentId);
+        Assert.Equal(version, providerEvent.Data["apiVersion"]);
+    }
 }

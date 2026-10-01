@@ -25,6 +25,9 @@ public sealed class StripePaymentProvider(HttpClient httpClient, StripeOptions o
 
     public string Name => "Stripe";
 
+    /// <summary>The Stripe API version every request from this provider is made against.</summary>
+    public static string ApiVersion => StripeConfiguration.ApiVersion;
+
     public PaymentProviderCapabilities Capabilities => PaymentProviderCapabilities.Create | PaymentProviderCapabilities.Authorize | PaymentProviderCapabilities.Capture | PaymentProviderCapabilities.Void | PaymentProviderCapabilities.Refund | PaymentProviderCapabilities.PartialRefund | PaymentProviderCapabilities.SavedPaymentMethods | PaymentProviderCapabilities.RecurringPayments | PaymentProviderCapabilities.Webhooks;
 
     /// <summary>
@@ -145,9 +148,10 @@ public sealed class StripePaymentProvider(HttpClient httpClient, StripeOptions o
     {
         string json = Encoding.UTF8.GetString(request.Body.Span);
 
-        // Version mismatches are not fatal here. A Stripe account's webhook endpoints are pinned
-        // to whatever version the Dashboard gave them, routinely older than the SDK's own - and
-        // refusing to read those events would drop real settled payments over a cosmetic gap.
+        // Version mismatches are not fatal here. A webhook endpoint keeps the version it was created
+        // with, so one made before the account default moved is older than the SDK's own - and
+        // refusing to read those events would drop real settled payments over a cosmetic gap. The
+        // event's version travels on as "apiVersion" so a caller can see the gap and say so.
         Event stripeEvent = EventUtility.ConstructEventWithoutVerification(json);
 
         // The entity travels on as raw JSON: it can be any Stripe object and callers match their
@@ -165,7 +169,11 @@ public sealed class StripePaymentProvider(HttpClient httpClient, StripeOptions o
             stripeEvent.Type,
             paymentId,
             ToOffset(stripeEvent.Created),
-            new Dictionary<string, string> { ["object"] = entity.GetRawText() }));
+            new Dictionary<string, string>
+            {
+                ["object"] = entity.GetRawText(),
+                ["apiVersion"] = stripeEvent.ApiVersion ?? string.Empty
+            }));
     }
 
     private Task<PaymentResult> CreateIntentAsync(PaymentRequest request, bool manualCapture, bool offSession, CancellationToken cancellationToken)
