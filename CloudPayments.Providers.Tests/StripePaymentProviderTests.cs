@@ -144,13 +144,13 @@ public class StripePaymentProviderTests
     }
 
     [Fact]
-    public void The_provider_speaks_the_dahlia_api_version()
+    public void The_provider_speaks_the_endive_api_version()
     {
-        Assert.Equal("2026-08-26.dahlia", StripePaymentProvider.ApiVersion);
+        Assert.Equal("2026-09-30.endive", StripePaymentProvider.ApiVersion);
     }
 
     [Theory]
-    [InlineData("2026-08-26.dahlia")]
+    [InlineData("2026-09-30.endive")]
     [InlineData("2019-05-16")]
     public async Task ParseWebhookAsync_reports_the_api_version_the_event_was_sent_in_and_reads_older_ones(string version)
     {

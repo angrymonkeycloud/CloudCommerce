@@ -21,11 +21,11 @@ Built on [Stripe.net](https://github.com/stripe/stripe-dotnet), which sends the 
 generated against on every request. There is no version setting to configure, and deliberately so:
 the SDK's models only understand that one version, and an account whose Dashboard default differs
 can no longer change what comes back. Moving to a newer Stripe API means upgrading the package.
-`StripePaymentProvider.ApiVersion` reports the version in use (currently `2026-08-26.dahlia`).
+`StripePaymentProvider.ApiVersion` reports the version in use (currently `2026-09-30.endive`).
 
 Two places outside the provider must agree with it:
 
-- **Stripe.js.** Load it from the matching release channel, `https://js.stripe.com/dahlia/stripe.js`,
+- **Stripe.js.** Load it from the matching release channel, `https://js.stripe.com/endive/stripe.js`,
   rather than the unversioned `/v3`.
 - **Webhook endpoints.** An endpoint keeps the API version it was created with. Events from an older
   one are still read, and each carries its version as `apiVersion` in `PaymentProviderEvent.Data`, so
