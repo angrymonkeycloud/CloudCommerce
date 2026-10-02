@@ -15,7 +15,7 @@
   </PropertyGroup>
   <ItemGroup>
     <SupportedPlatform Include="browser" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.12" />
     <ProjectReference Include="..\CloudCommerce\CloudCommerce.csproj" />
 
     <None Include="README.md" Pack="true" PackagePath="\" />

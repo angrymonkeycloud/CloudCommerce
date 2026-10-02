@@ -7,6 +7,18 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Folder Name="/.libraries/" />
+  <Folder Name="/.libraries/CloudCommon/">
+    <Project Path="../CloudCommon/CloudCommon.Models/CloudCommon.Models.csproj">
+      <BuildType Solution="Release_Server|*" Project="Release" />
+    </Project>
+    <Project Path="../CloudCommon/CloudCommon.Theming.Blazor/CloudCommon.Theming.Blazor.csproj">
+      <BuildType Solution="Release_Server|*" Project="Release" />
+    </Project>
+    <Project Path="../CloudCommon/CloudCommon.Theming/CloudCommon.Theming.csproj">
+      <BuildType Solution="Release_Server|*" Project="Release" />
+    </Project>
+  </Folder>
   <Folder Name="/Booking/">
     <Project Path="CloudBooking.Tests/CloudBooking.Tests.csproj">
       <BuildType Solution="Release_Server|*" Project="Debug" />
