@@ -38,6 +38,14 @@ public interface IShippingProvider
     Task<Shipment> RefreshTrackingAsync(Guid shipmentId, CancellationToken cancellationToken = default);
     Task CancelShipmentAsync(Guid shipmentId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<PickupLocation>> GetPickupLocationsAsync(string countryCode, string? subdivisionCode = null, CancellationToken cancellationToken = default);
+
+    /// <summary>Reads the current state of a shipment from the carrier by the reference it returned, so tracking survives restarts without a shipment store.</summary>
+    Task<Shipment> TrackAsync(string providerReference, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException($"{Name} does not support tracking by carrier reference.");
+
+    /// <summary>Cancels a shipment at the carrier by the reference it returned.</summary>
+    Task CancelAsync(string providerReference, string? reason = null, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException($"{Name} does not support cancelling by carrier reference.");
 }
 
 public interface IShippingProviderRegistry

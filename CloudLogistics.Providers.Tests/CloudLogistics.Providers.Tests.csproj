@@ -7,5 +7,6 @@
     <ProjectReference Include="..\CloudLogistics.Aramex\CloudLogistics.Aramex.csproj" />
     <ProjectReference Include="..\CloudLogistics.DhlExpress\CloudLogistics.DhlExpress.csproj" />
     <ProjectReference Include="..\CloudLogistics.FedEx\CloudLogistics.FedEx.csproj" />
+    <ProjectReference Include="..\CloudLogistics.Wakilni\CloudLogistics.Wakilni.csproj" />
   </ItemGroup>
 </Project>

@@ -24,6 +24,7 @@ CloudCommerce is a modular .NET commerce ecosystem. Use CloudPayments, CloudLogi
 | Logistics | `AngryMonkey.CloudLogistics.Aramex` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogistics.Aramex)](https://www.nuget.org/packages/AngryMonkey.CloudLogistics.Aramex) |
 | Logistics | `AngryMonkey.CloudLogistics.DhlExpress` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogistics.DhlExpress)](https://www.nuget.org/packages/AngryMonkey.CloudLogistics.DhlExpress) |
 | Logistics | `AngryMonkey.CloudLogistics.FedEx` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogistics.FedEx)](https://www.nuget.org/packages/AngryMonkey.CloudLogistics.FedEx) |
+| Logistics | `AngryMonkey.CloudLogistics.Wakilni` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogistics.Wakilni)](https://www.nuget.org/packages/AngryMonkey.CloudLogistics.Wakilni) |
 | Booking | `AngryMonkey.CloudBooking` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudBooking)](https://www.nuget.org/packages/AngryMonkey.CloudBooking) |
 | Commerce | `AngryMonkey.CloudCommerce` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudCommerce)](https://www.nuget.org/packages/AngryMonkey.CloudCommerce) |
 | UI | `AngryMonkey.CloudCommerce.Components` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudCommerce.Components)](https://www.nuget.org/packages/AngryMonkey.CloudCommerce.Components) |
@@ -31,7 +32,7 @@ CloudCommerce is a modular .NET commerce ecosystem. Use CloudPayments, CloudLogi
 ## Choose a division
 
 - [CloudPayments](CloudPayments/README.md): normalized transactions, tax extension points, webhooks, seven gateway adapters, and official sandbox resources.
-- [CloudLogistics](CloudLogistics/README.md): inventory, fulfillment, shipping, tracking, and Aramex, DHL Express, and FedEx adapters.
+- [CloudLogistics](CloudLogistics/README.md): inventory, fulfillment, shipping, tracking, and Aramex, DHL Express, FedEx and Wakilni adapters.
 - [CloudBooking](CloudBooking/README.md): standalone availability, capacity, reservations, rescheduling, and persistence contracts.
 - [CloudCommerce](CloudCommerce/README.md): headless cart, totals, checkout, order, and cross-domain orchestration.
 - [CloudCommerce Components](CloudCommerce.Components/README.md): replaceable Blazor components and composition slots.

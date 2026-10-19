@@ -62,6 +62,9 @@
     <Project Path="CloudLogistics.Providers.Tests/CloudLogistics.Providers.Tests.csproj">
       <BuildType Solution="Release_Server|*" Project="Debug" />
     </Project>
+    <Project Path="CloudLogistics.Wakilni/CloudLogistics.Wakilni.csproj">
+      <BuildType Solution="Release_Server|*" Project="Debug" />
+    </Project>
     <Project Path="CloudLogistics.Tests/CloudLogistics.Tests.csproj">
       <BuildType Solution="Release_Server|*" Project="Debug" />
     </Project>

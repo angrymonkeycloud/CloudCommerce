@@ -64,6 +64,9 @@ public sealed record LogisticsAddress
     public string? Line2 { get; init; }
     public string? RecipientName { get; init; }
     public string? PhoneNumber { get; init; }
+    public string? Email { get; init; }
+    public decimal? Latitude { get; init; }
+    public decimal? Longitude { get; init; }
 }
 
 public sealed record Warehouse(Guid Id, string Name, LogisticsAddress Address, bool IsActive = true);
@@ -89,7 +92,21 @@ public sealed record Fulfillment(Guid Id, IReadOnlyList<FulfillmentLine> Lines, 
 public sealed record ShippingRate(string Provider, string ServiceCode, string Name, Money Price, TimeSpan? EstimatedTransitTime = null);
 public sealed record ShippingRateRequest(LogisticsAddress Origin, LogisticsAddress Destination, IReadOnlyList<ShippingPackage> Packages, Dictionary<string, string>? Metadata = null);
 public sealed record ShippingPackage(decimal Weight, decimal Length, decimal Width, decimal Height, string WeightUnit = "kg", string LengthUnit = "cm");
-public sealed record ShipmentRequest(LogisticsAddress Origin, LogisticsAddress Destination, IReadOnlyList<ShippingPackage> Packages, string ServiceCode, string? Reference = null);
+public sealed record ShipmentRequest(LogisticsAddress Origin, LogisticsAddress Destination, IReadOnlyList<ShippingPackage> Packages, string ServiceCode, string? Reference = null)
+{
+    /// <summary>The amount the courier collects from the recipient on delivery, or null when the shipment is already paid.</summary>
+    public Money? CashOnDelivery { get; init; }
+
+    /// <summary>What is inside the shipment, for carriers that list contents instead of measuring packages.</summary>
+    public IReadOnlyList<ShipmentItem> Items { get; init; } = [];
+
+    /// <summary>Instructions for the driver.</summary>
+    public string? Notes { get; init; }
+
+    public Dictionary<string, string>? Metadata { get; init; }
+}
+
+public sealed record ShipmentItem(string Name, int Quantity, string? Sku = null);
 public sealed record ShipmentDocument(string Type, string Format, string? Content = null, Uri? Url = null);
 public sealed record Shipment(Guid Id, string Provider, string ServiceCode, ShipmentStatuses Status, string? TrackingNumber = null, Uri? TrackingUrl = null, Uri? LabelUrl = null, DateTimeOffset? DeliveredAt = null, string? ProviderReference = null, IReadOnlyList<ShipmentDocument>? Documents = null, Dictionary<string, string>? Metadata = null);
 public sealed record PickupLocation(string Provider, string Code, string Name, LogisticsAddress Address);
