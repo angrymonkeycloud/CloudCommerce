@@ -52,6 +52,22 @@ public static class WakilniMetadata
     public const string ReceiverLocationId = "wakilni.receiverLocationId";
     public const string Floor = "wakilni.floor";
     public const string Building = "wakilni.building";
+
+    /// <summary>Package type for every item of the delivery, one of <see cref="WakilniPackageTypes"/>; the configured default otherwise.</summary>
+    public const string PackageType = "wakilni.packageType";
+
+    /// <summary>"true" asks for a car instead of a motorbike.</summary>
+    public const string CarNeeded = "wakilni.carNeeded";
+
+    public const string RequireSignature = "wakilni.requireSignature";
+    public const string RequirePicture = "wakilni.requirePicture";
+
+    /// <summary>"true" lets the recipient try the items on before accepting them.</summary>
+    public const string TryOn = "wakilni.tryOn";
+
+    /// <summary>"true" when the driver also brings an item back from the recipient.</summary>
+    public const string Exchange = "wakilni.exchange";
+
     public const string StatusCode = "wakilni.statusCode";
     public const string Status = "wakilni.status";
     public const string Comments = "wakilni.comments";

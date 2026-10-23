@@ -148,4 +148,126 @@ public class WakilniShippingProviderTests
         Assert.False(WakilniStatuses.IsFinal(WakilniStatuses.Postponed));
         Assert.Equal(ShipmentStatuses.Returned, WakilniStatuses.Map(WakilniStatuses.ClosedFailed));
     }
+
+    [Fact]
+    public void A_refused_delivery_is_not_delivered()
+    {
+        Assert.Equal(ShipmentStatuses.Returned, WakilniStatuses.Map(WakilniStatuses.Success, "Success, Rejected"));
+        Assert.Equal(ShipmentStatuses.Delivered, WakilniStatuses.Map(WakilniStatuses.Success, "Success"));
+    }
+
+    [Fact]
+    public async Task GetHistoryAsync_lists_every_step_oldest_first()
+    {
+        StubHttpMessageHandler handler = new((request, _) => request.RequestUri!.AbsolutePath == "/api/v2/third_party/auth_token"
+            ? StubHttpMessageHandler.Json("""{"token":"abc"}""")
+            : StubHttpMessageHandler.Json("""{"success":true,"data":{"tracking_id":"T12","comments":["No answer","Order rejected"],"logs":[{"status":"Success, Rejected","status_code":4,"created_at":"2026-10-19 11:22:24"},{"status":"Processing","status_code":3,"created_at":"2026-10-19 10:58:49"},{"status":"Pending","status_code":1,"created_at":"2026-10-19 10:40:22"}]}}"""));
+        WakilniShippingProvider provider = new(new HttpClient(handler) { BaseAddress = new("https://wakilni.test/") }, Options);
+
+        WakilniHistory history = await provider.GetHistoryAsync("12");
+        Shipment shipment = provider.ToShipment("12", history);
+
+        Assert.Equal(["Pending", "Processing", "Success, Rejected"], history.Entries.Select(entry => entry.Status));
+        Assert.Equal(["No answer", "Order rejected"], history.Comments);
+        Assert.Equal("T12", history.TrackingId);
+        Assert.Equal(ShipmentStatuses.Returned, shipment.Status);
+        Assert.Null(shipment.DeliveredAt);
+    }
+
+    [Fact]
+    public async Task Steps_in_the_same_second_keep_Wakilni_newest_first_order()
+    {
+        StubHttpMessageHandler handler = new((request, _) => request.RequestUri!.AbsolutePath == "/api/v2/third_party/auth_token"
+            ? StubHttpMessageHandler.Json("""{"token":"abc"}""")
+            : StubHttpMessageHandler.Json("""{"success":true,"data":{"logs":[{"status":"Canceled","status_code":7,"created_at":"2026-10-23 10:00:01"},{"status":"Pending","status_code":1,"created_at":"2026-10-23 10:00:01"}]}}"""));
+        WakilniShippingProvider provider = new(new HttpClient(handler) { BaseAddress = new("https://wakilni.test/") }, Options);
+
+        WakilniHistory history = await provider.GetHistoryAsync("12");
+
+        Assert.Equal(WakilniStatuses.Canceled, history.Latest!.Code);
+    }
+
+    [Fact]
+    public async Task Delivery_options_reach_Wakilni_with_the_booking()
+    {
+        List<(HttpMethod Method, string Path, string? Body)> calls = [];
+        StubHttpMessageHandler handler = new((request, _) =>
+        {
+            string path = request.RequestUri!.AbsolutePath;
+            calls.Add((request.Method, path, request.Content?.ReadAsStringAsync().Result));
+
+            return path switch
+            {
+                "/api/v2/third_party/auth_token" => StubHttpMessageHandler.Json("""{"token":"abc"}"""),
+                "/api/v2/clients/start_bulk" => StubHttpMessageHandler.Json("""{"bulk_id":3}"""),
+                "/api/v2/clients/end_bulk/3" => StubHttpMessageHandler.Json("""{"bulk_id":3}"""),
+                "/api/v2/clients/add_delivery/3" => StubHttpMessageHandler.Json("""{"delivery_id":77,"tracking_id":"T77"}"""),
+                _ => StubHttpMessageHandler.Json("""{"id":77}""")
+            };
+        });
+        WakilniShippingProvider provider = new(new HttpClient(handler) { BaseAddress = new("https://wakilni.test/") }, Options);
+
+        ShipmentRequest request = Request() with
+        {
+            Metadata = new()
+            {
+                [WakilniMetadata.CarNeeded] = "true",
+                [WakilniMetadata.PackageType] = WakilniPackageTypes.SmallBox.ToString(),
+                [WakilniMetadata.RequireSignature] = "true"
+            }
+        };
+
+        WakilniBooking booking = (await provider.CreateShipmentsAsync([request]))[0];
+
+        Assert.Null(booking.Warning);
+
+        using JsonDocument added = JsonDocument.Parse(calls.Single(call => call.Path == "/api/v2/clients/add_delivery/3").Body!);
+        Assert.True(added.RootElement.GetProperty("car_needed").GetBoolean());
+        Assert.Equal(WakilniPackageTypes.SmallBox, added.RootElement.GetProperty("packages")[0].GetProperty("type_id").GetInt32());
+
+        (HttpMethod method, string path, string? body) = calls[^1];
+        Assert.Equal(HttpMethod.Put, method);
+        Assert.Equal("/api/v2/clients/orders/77", path);
+        using JsonDocument handling = JsonDocument.Parse(body!);
+        Assert.True(handling.RootElement.GetProperty("require_signature").GetBoolean());
+        Assert.False(handling.RootElement.TryGetProperty("try_on", out _));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_sends_the_corrected_delivery_without_booking_fields()
+    {
+        string? sent = null;
+        StubHttpMessageHandler handler = new((request, _) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/api/v2/third_party/auth_token")
+                return StubHttpMessageHandler.Json("""{"token":"abc"}""");
+
+            sent = request.Content?.ReadAsStringAsync().Result;
+            return StubHttpMessageHandler.Json("""{"message":"Order updated","id":77}""");
+        });
+        WakilniShippingProvider provider = new(new HttpClient(handler) { BaseAddress = new("https://wakilni.test/") }, Options);
+
+        await provider.UpdateAsync("77", Request(new Money("USD", 30m)));
+
+        using JsonDocument body = JsonDocument.Parse(sent!);
+        Assert.Equal(30m, body.RootElement.GetProperty("collection_amount").GetDecimal());
+        Assert.Equal("Hamra", body.RootElement.GetProperty("receiver_area").GetString());
+        Assert.True(body.RootElement.GetProperty("new_receiver_location").GetBoolean());
+        Assert.False(body.RootElement.GetProperty("require_picture").GetBoolean());
+        Assert.False(body.RootElement.TryGetProperty("receiver_location_id", out _));
+        Assert.False(body.RootElement.TryGetProperty("get_barcode", out _));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_reports_why_Wakilni_refused()
+    {
+        StubHttpMessageHandler handler = new((request, _) => request.RequestUri!.AbsolutePath == "/api/v2/third_party/auth_token"
+            ? StubHttpMessageHandler.Json("""{"token":"abc"}""")
+            : StubHttpMessageHandler.Json("""{"message":"Only pending orders can be updated."}""", HttpStatusCode.UnprocessableEntity));
+        WakilniShippingProvider provider = new(new HttpClient(handler) { BaseAddress = new("https://wakilni.test/") }, Options);
+
+        WakilniException exception = await Assert.ThrowsAsync<WakilniException>(() => provider.UpdateAsync("77", Request()));
+
+        Assert.Equal("Only pending orders can be updated.", exception.Message);
+    }
 }

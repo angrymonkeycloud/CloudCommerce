@@ -22,6 +22,16 @@ public sealed class WakilniShippingProvider(HttpClient httpClient, WakilniOption
     private const int CollectOnDelivery = 52;
     private const int AlreadyPaid = 54;
 
+    private static readonly string[] BookingOnlyFields = ["get_order_details", "get_barcode", "receiver_id", "receiver_location_id"];
+
+    private static readonly (string Field, string Key)[] HandlingFlags =
+    [
+        ("require_signature", WakilniMetadata.RequireSignature),
+        ("require_picture", WakilniMetadata.RequirePicture),
+        ("try_on", WakilniMetadata.TryOn),
+        ("exchange", WakilniMetadata.Exchange)
+    ];
+
     private readonly ConcurrentDictionary<Guid, Shipment> _shipments = new();
     private readonly SemaphoreSlim _tokenLock = new(1, 1);
     private string? _token;
@@ -79,11 +89,68 @@ public sealed class WakilniShippingProvider(HttpClient httpClient, WakilniOption
         if (bookings.Any(booking => booking.Shipment is not null))
             await SendAsync(HttpMethod.Post, $"api/v2/clients/end_bulk/{Uri.EscapeDataString(bulkId)}", null, cancellationToken);
 
+        // Signature, picture, try on and exchange are only accepted when updating an order, so they follow the booking.
+        for (int index = 0; index < bookings.Count; index++)
+        {
+            if (bookings[index].Shipment is not Shipment shipment || HandlingOptions(bookings[index].Request) is not { Count: > 0 } handling)
+                continue;
+
+            try
+            {
+                await SendAsync(HttpMethod.Put, $"api/v2/clients/orders/{Uri.EscapeDataString(shipment.ProviderReference!)}", handling, cancellationToken);
+            }
+            catch (WakilniException exception)
+            {
+                bookings[index] = bookings[index] with { Warning = $"Booked, but Wakilni did not take the delivery options: {exception.Message}" };
+            }
+        }
+
         foreach (WakilniBooking booking in bookings)
             if (booking.Shipment is Shipment shipment)
                 _shipments[shipment.Id] = shipment;
 
         return bookings;
+    }
+
+    /// <summary>
+    /// Sends the current recipient, address, collection, packages and delivery options of a booked delivery to Wakilni.
+    /// Wakilni only accepts changes while the delivery is still pending.
+    /// </summary>
+    public async Task UpdateAsync(string providerReference, ShipmentRequest request, CancellationToken cancellationToken = default)
+    {
+        Dictionary<string, object?> body = DeliveryBody(request);
+
+        foreach (string key in BookingOnlyFields)
+            body.Remove(key);
+
+        body["new_receiver_location"] = true;
+
+        foreach ((string key, object? value) in HandlingOptions(request, includeUnset: true))
+            body[key] = value;
+
+        await SendAsync(HttpMethod.Put, $"api/v2/clients/orders/{Uri.EscapeDataString(providerReference)}", body, cancellationToken);
+    }
+
+    /// <summary>Every status a Wakilni order went through, oldest first, with the driver's comments.</summary>
+    public async Task<WakilniHistory> GetHistoryAsync(string providerReference, CancellationToken cancellationToken = default)
+    {
+        JsonElement root = await SendAsync(HttpMethod.Get, $"api/v2/clients/orders/status?order_id={Uri.EscapeDataString(providerReference)}", null, cancellationToken);
+        JsonElement data = root.ValueKind == JsonValueKind.Object && root.TryGetProperty("data", out JsonElement inner) && inner.ValueKind == JsonValueKind.Object ? inner : root;
+
+        // Wakilni lists the newest step first and times steps to the second, so steps within the same second keep that order reversed.
+        List<WakilniStatusEntry> entries = data.ValueKind == JsonValueKind.Object && data.TryGetProperty("logs", out JsonElement logs) && logs.ValueKind == JsonValueKind.Array
+            ? [.. logs.EnumerateArray()
+                .Select((log, index) => (Index: index, Entry: new WakilniStatusEntry(Number(log, "status_code") ?? WakilniStatuses.Pending, Text(log, "status") ?? WakilniStatuses.Label(Number(log, "status_code") ?? WakilniStatuses.Pending), Date(log, "created_at"))))
+                .OrderBy(step => step.Entry.At ?? DateTimeOffset.MinValue)
+                .ThenByDescending(step => step.Index)
+                .Select(step => step.Entry)]
+            : [];
+
+        List<string> comments = data.ValueKind == JsonValueKind.Object && data.TryGetProperty("comments", out JsonElement notes) && notes.ValueKind == JsonValueKind.Array
+            ? [.. notes.EnumerateArray().Select(comment => comment.ValueKind == JsonValueKind.String ? comment.GetString() : comment.ToString()).OfType<string>().Where(comment => comment.Length > 0)]
+            : [];
+
+        return new WakilniHistory(Text(data, "tracking_id"), entries, comments);
     }
 
     public Task<Shipment?> GetShipmentAsync(Guid shipmentId, CancellationToken cancellationToken = default)
@@ -102,33 +169,27 @@ public sealed class WakilniShippingProvider(HttpClient httpClient, WakilniOption
     }
 
     /// <summary>Reads the status history of a Wakilni order by its order id and maps the latest step.</summary>
-    public async Task<Shipment> TrackAsync(string providerReference, CancellationToken cancellationToken = default)
+    public async Task<Shipment> TrackAsync(string providerReference, CancellationToken cancellationToken = default) =>
+        ToShipment(providerReference, await GetHistoryAsync(providerReference, cancellationToken));
+
+    /// <summary>The shipment a status history describes: its latest step decides the status.</summary>
+    public Shipment ToShipment(string providerReference, WakilniHistory history)
     {
-        JsonElement root = await SendAsync(HttpMethod.Get, $"api/v2/clients/orders/status?order_id={Uri.EscapeDataString(providerReference)}", null, cancellationToken);
-        JsonElement data = root.TryGetProperty("data", out JsonElement inner) && inner.ValueKind == JsonValueKind.Object ? inner : root;
-
-        WakilniStatusLog? latest = data.TryGetProperty("logs", out JsonElement logs) && logs.ValueKind == JsonValueKind.Array
-            ? logs.EnumerateArray()
-                .Select(log => new WakilniStatusLog(Number(log, "status_code") ?? 0, Text(log, "status"), Date(log, "created_at")))
-                .OrderBy(log => log.CreatedAt ?? DateTimeOffset.MinValue)
-                .LastOrDefault()
-            : null;
-
-        int code = latest?.Code ?? 1;
-        string? trackingId = Text(data, "tracking_id");
+        WakilniStatusEntry? latest = history.Latest;
+        int code = latest?.Code ?? WakilniStatuses.Pending;
         Dictionary<string, string> metadata = new()
         {
             [WakilniMetadata.StatusCode] = code.ToString(CultureInfo.InvariantCulture),
             [WakilniMetadata.Status] = latest?.Status ?? WakilniStatuses.Label(code)
         };
 
-        if (data.TryGetProperty("comments", out JsonElement comments) && comments.ValueKind == JsonValueKind.Array)
-            metadata[WakilniMetadata.Comments] = string.Join("\n", comments.EnumerateArray().Select(comment => comment.ValueKind == JsonValueKind.String ? comment.GetString() : comment.ToString()));
+        if (history.Comments.Count > 0)
+            metadata[WakilniMetadata.Comments] = string.Join("\n", history.Comments);
 
-        ShipmentStatuses status = WakilniStatuses.Map(code);
+        ShipmentStatuses status = WakilniStatuses.Map(code, latest?.Status);
 
-        return new Shipment(StableId(providerReference), Name, WakilniServices.Bulk, status, trackingId,
-            DeliveredAt: status == ShipmentStatuses.Delivered ? latest?.CreatedAt ?? DateTimeOffset.UtcNow : null,
+        return new Shipment(StableId(providerReference), Name, WakilniServices.Bulk, status, history.TrackingId,
+            DeliveredAt: status == ShipmentStatuses.Delivered ? latest?.At ?? DateTimeOffset.UtcNow : null,
             ProviderReference: providerReference,
             Metadata: metadata);
     }
@@ -191,7 +252,7 @@ public sealed class WakilniShippingProvider(HttpClient httpClient, WakilniOption
             ["receiver_directions"] = string.IsNullOrWhiteSpace(directions) ? null : directions,
             ["receiver_area"] = destination.Locality,
             ["note"] = request.Notes,
-            ["car_needed"] = false,
+            ["car_needed"] = Flag(metadata, WakilniMetadata.CarNeeded),
             ["is_express"] = string.Equals(request.ServiceCode, WakilniServices.Express, StringComparison.OrdinalIgnoreCase),
             ["packages"] = Packages(request)
         };
@@ -212,9 +273,30 @@ public sealed class WakilniShippingProvider(HttpClient httpClient, WakilniOption
         return body;
     }
 
-    private object[] Packages(ShipmentRequest request) => request.Items.Count > 0
-        ? [.. request.Items.Select(item => new Dictionary<string, object?> { ["quantity"] = Math.Max(1, item.Quantity), ["type_id"] = options.PackageTypeId, ["name"] = item.Name, ["sku"] = item.Sku })]
-        : [new Dictionary<string, object?> { ["quantity"] = Math.Max(1, request.Packages.Count), ["type_id"] = options.PackageTypeId }];
+    private object[] Packages(ShipmentRequest request)
+    {
+        int typeId = request.Metadata?.GetValueOrDefault(WakilniMetadata.PackageType) is string type && int.TryParse(type, out int value) ? value : options.PackageTypeId;
+
+        return request.Items.Count > 0
+            ? [.. request.Items.Select(item => new Dictionary<string, object?> { ["quantity"] = Math.Max(1, item.Quantity), ["type_id"] = typeId, ["name"] = item.Name, ["sku"] = item.Sku })]
+            : [new Dictionary<string, object?> { ["quantity"] = Math.Max(1, request.Packages.Count), ["type_id"] = typeId }];
+    }
+
+    /// <summary>The delivery options only the update endpoint takes: those switched on, or all of them when <paramref name="includeUnset"/> is set.</summary>
+    private static Dictionary<string, object?> HandlingOptions(ShipmentRequest request, bool includeUnset = false)
+    {
+        Dictionary<string, string> metadata = request.Metadata ?? [];
+        Dictionary<string, object?> handling = [];
+
+        foreach ((string field, string key) in HandlingFlags)
+            if (includeUnset || Flag(metadata, key))
+                handling[field] = Flag(metadata, key);
+
+        return handling;
+    }
+
+    private static bool Flag(Dictionary<string, string> metadata, string key) =>
+        metadata.TryGetValue(key, out string? value) && bool.TryParse(value, out bool flag) && flag;
 
     private Shipment ToShipment(ShipmentRequest request, JsonElement delivery)
     {
@@ -407,12 +489,18 @@ public sealed class WakilniShippingProvider(HttpClient httpClient, WakilniOption
 
     private static Guid StableId(string providerReference) =>
         new(MD5.HashData(Encoding.UTF8.GetBytes($"wakilni:{providerReference}")));
-
-    private sealed record WakilniStatusLog(int Code, string? Status, DateTimeOffset? CreatedAt);
 }
 
-/// <summary>The outcome of one delivery in a bulk booking: the shipment, or why Wakilni rejected it.</summary>
-public sealed record WakilniBooking(ShipmentRequest Request, Shipment? Shipment, string? Error);
+/// <summary>The outcome of one delivery in a bulk booking: the shipment, or why Wakilni rejected it, and anything Wakilni booked only in part.</summary>
+public sealed record WakilniBooking(ShipmentRequest Request, Shipment? Shipment, string? Error, string? Warning = null);
+
+/// <summary>One step of a Wakilni order, as Wakilni names it, for example "Success, Rejected".</summary>
+public sealed record WakilniStatusEntry(int Code, string Status, DateTimeOffset? At);
+
+public sealed record WakilniHistory(string? TrackingId, IReadOnlyList<WakilniStatusEntry> Entries, IReadOnlyList<string> Comments)
+{
+    public WakilniStatusEntry? Latest => Entries.Count > 0 ? Entries[^1] : null;
+}
 
 public sealed record WakilniArea(string Id, string Name, string? Zone = null);
 
@@ -437,8 +525,13 @@ public static class WakilniStatuses
     /// <summary>Statuses after which Wakilni no longer moves the order.</summary>
     public static bool IsFinal(int code) => code is Success or Declined or Canceled or ClosedFailed;
 
-    public static ShipmentStatuses Map(int code) => code switch
+    /// <summary>Wakilni closes a delivery the recipient refused with the success code and a status such as "Success, Rejected".</summary>
+    public static bool IsRejected(int code, string? status) =>
+        code == Success && status?.Contains("reject", StringComparison.OrdinalIgnoreCase) == true;
+
+    public static ShipmentStatuses Map(int code, string? status = null) => code switch
     {
+        Success when IsRejected(code, status) => ShipmentStatuses.Returned,
         Confirmed => ShipmentStatuses.LabelCreated,
         Processing => ShipmentStatuses.OutForDelivery,
         Success => ShipmentStatuses.Delivered,
