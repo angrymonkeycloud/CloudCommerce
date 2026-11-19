@@ -3,7 +3,7 @@
 [![Website](https://img.shields.io/badge/Angry_Monkey_Cloud-website-6d4aff)](https://angrymonkeycloud.com)
 [![GitHub](https://img.shields.io/badge/GitHub-CloudCommerce-181717?logo=github)](https://github.com/angrymonkeycloud/CloudCommerce)
 [![Commerce ecosystem](https://github.com/angrymonkeycloud/CloudCommerce/actions/workflows/commerce.yml/badge.svg)](https://github.com/angrymonkeycloud/CloudCommerce/actions/workflows/commerce.yml)
-[![.NET 10](https://img.shields.io/badge/.NET-10.0-512bd4)](https://dotnet.microsoft.com/)
+[![.NET 11](https://img.shields.io/badge/.NET-11.0-512bd4)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 CloudCommerce is a modular .NET commerce ecosystem. Use CloudPayments, CloudLogistics, or CloudBooking independently, or compose them through CloudCommerce and its replaceable Blazor components. Applications keep ownership of product and subscription meaning; provider packages remain isolated; public projects do not depend on private CDM persistence.

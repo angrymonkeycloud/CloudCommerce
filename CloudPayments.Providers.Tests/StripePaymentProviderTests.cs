@@ -146,7 +146,7 @@ public class StripePaymentProviderTests
     [Fact]
     public void The_provider_speaks_the_endive_api_version()
     {
-        Assert.Equal("2026-09-30.endive", StripePaymentProvider.ApiVersion);
+        Assert.Equal("2026-11-18.endive", StripePaymentProvider.ApiVersion);
     }
 
     [Theory]

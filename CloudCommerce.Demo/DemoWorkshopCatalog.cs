@@ -11,7 +11,7 @@ public static class DemoWorkshopCatalog
 {
     private static readonly ConcurrentDictionary<string, string> Sources = new(StringComparer.Ordinal);
     private static readonly ConcurrentDictionary<string, DemoGuide> Guides = new(StringComparer.OrdinalIgnoreCase);
-    private const string RunSetup = "Install the .NET 10 SDK, clone CloudCommerce, and run dotnet run --project CloudCommerce.Demo. Use the local HTTPS address printed by the application. The View tab runs the demo; the Code tab contains copyable source and the Instructions tab stays beside it.";
+    private const string RunSetup = "Install the .NET 11 SDK, clone CloudCommerce, and run dotnet run --project CloudCommerce.Demo. Use the local HTTPS address printed by the application. The View tab runs the demo; the Code tab contains copyable source and the Instructions tab stays beside it.";
     private const string SourceNote = "Complete source from this build. Demo files use the CloudCommerce.Demo namespace, fixtures and shared workshop UI; copy their dependencies too, or adapt the integration example to your application.";
 
     public static DemoGuide Find(string path)

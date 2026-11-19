@@ -1,12 +1,12 @@
 # CloudCommerce developer workshop
 
-[![Angry Monkey Cloud](https://img.shields.io/badge/Angry_Monkey_Cloud-Website-6d4aff?style=flat-square)](https://angrymonkeycloud.com) [![Build](https://github.com/angrymonkeycloud/CloudCommerce/actions/workflows/commerce.yml/badge.svg)](https://github.com/angrymonkeycloud/CloudCommerce/actions/workflows/commerce.yml) [![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?style=flat-square)](https://dotnet.microsoft.com/)
+[![Angry Monkey Cloud](https://img.shields.io/badge/Angry_Monkey_Cloud-Website-6d4aff?style=flat-square)](https://angrymonkeycloud.com) [![Build](https://github.com/angrymonkeycloud/CloudCommerce/actions/workflows/commerce.yml/badge.svg)](https://github.com/angrymonkeycloud/CloudCommerce/actions/workflows/commerce.yml) [![.NET 11](https://img.shields.io/badge/.NET-10-512BD4?style=flat-square)](https://dotnet.microsoft.com/)
 
 CloudCommerce.Demo is the workshop for the commerce ecosystem. Learning instructions, runnable scenarios and copyable code live together in the application.
 
 ## Start the workshop
 
-Install the .NET 10 SDK, then run from the repository root:
+Install the .NET 11 SDK, then run from the repository root:
 
 ~~~powershell
 dotnet run --project CloudCommerce.Demo
